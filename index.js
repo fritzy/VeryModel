@@ -176,10 +176,14 @@ function VeryModel(definition) {
                 var merrors;
                 if (this.__data.hasOwnProperty(field) && this.__defs[field].depends) {
                     for (fidx in this.__defs[field].depends) {
-                        merrors = this.__defs[field].depends[fidx].validate(this.__data[fidx]);
-                        merrors.forEach(function (error) {
-                            errors.push(field + ": Dependency  -> " + fidx + ": " + error);
-                        });
+                        if (!this.__data.hasOwnProperty(fidx)) {
+                            errors.push(field + ": Dependency -> " + fidx + ": not set");
+                        } else {
+                            merrors = this.__defs[field].depends[fidx].validate(this.__data[fidx]);
+                            merrors.forEach(function (error) {
+                                errors.push(field + ": Dependency  -> " + fidx + ": " + error);
+                            });
+                        }
                     }
                 }
                 if (this.__defs[field].required && !this.__data.hasOwnProperty(field)) {
