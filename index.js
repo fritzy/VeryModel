@@ -107,12 +107,12 @@ function VeryModel(definition) {
 
     this.create = function (value) {
         var model = new Object;
-        var builds = [];
+        var derives = [];
         model.__defs = this.definition;
         model.__data = {};
         this.fields.forEach(function(field) {
-            if (model.__defs[field].build) {
-                builds.push(mode.__defs[field].build);
+            if (model.__defs[field].derive) {
+                derives.push(mode.__defs[field].derive);
             }
             model.__defineGetter__(field, function() {
                 return this.__data[field];
@@ -225,8 +225,8 @@ function VeryModel(definition) {
             model.__loadData(value);
         }
         
-        builds.forEach(function (build) {
-            build(model);
+        derives.forEach(function (derive) {
+            derive(model);
         });
 
         return model;
