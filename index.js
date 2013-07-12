@@ -174,7 +174,7 @@ function VeryModel(definition) {
             Object.keys(this.__defs).forEach(function(field) {
                 var fidx;
                 var merrors;
-                if (this.__defs[field].depends) {
+                if (this.__data.hasOwnProperty(field) && this.__defs[field].depends) {
                     for (fidx in this.__defs[field].depends) {
                         merrors = this.__defs[field].depends[fidx].validate(this.__data[fidx]);
                         merrors.forEach(function (error) {
