@@ -28,7 +28,11 @@ console.log(x.__toJSON());
 var TestModel = new VeryModel({
     name: {required: true, model: {
             first: {required: true, default: "Nathan"},
-            last: {required: true, default: "Fritz"}
+            last: {required: true, default: "Fritz"},
+            full: {derive: function (model) {
+                    return model.__parent.name.first + ' ' + model.last;
+                }
+            }
         }
     },
     age: {required: true, default: 13},
@@ -54,3 +58,42 @@ t2.parent.things.push({name: "Cat1"});
 console.log(t2.__toObject());
 console.log(t2.__validate());
 console.log(t2.parent.things[0].name);
+
+
+console.log('-----------------------');
+var generaldef = {
+    name: {
+        required: true,
+        model: {
+            first: {required: false, type: VeryType().isAlpha().len(2, 25)},
+            last: {required: false, type: VeryType().isAlpha().len(3, 25)},
+            title: {depends: {last: VeryType().isAlpha().len(3, 25)}},
+            full: {derive: function (name) {
+                return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
+                }
+            }
+        }
+    },
+    knowledge: {modelArray: {
+            name: {required: true},
+            category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
+        }
+    },
+    rank: {
+        required: true,
+        type: VeryType().isIn(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
+        default: 'Major-General'
+    }
+};
+
+
+var MajorGeneral = new VeryModel(generaldef);
+var stanley = MajorGeneral.create({
+name: {title: 'Major-General', last: 'Stanley'},
+rank: 'Major-General',
+knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}]
+});
+var errors = stanley.__validate();
+console.log(errors);
+console.log(stanley.__toObject());
+
