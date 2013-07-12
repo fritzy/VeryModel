@@ -107,33 +107,38 @@ function VeryModel(definition) {
 
     this.create = function (value) {
         var model = new Object;
-        model.__parent = this;
+        var builds = [];
+        model.__defs = this.definition;
         model.__data = {};
         this.fields.forEach(function(field) {
+            if (model.__defs[field].build) {
+                builds.push(mode.__defs[field].build);
+            }
             model.__defineGetter__(field, function() {
                 return this.__data[field];
             });
-            if (model.__parent.definition[field].hasOwnProperty('model')) {
-                model.__data[field] = model.__parent.definition[field].subModel.create();
+            if (model.__defs[field].hasOwnProperty('model')) {
+                model.__data[field] = model.__defs[field].subModel.create();
                 model.__defineSetter__(field, function(value) {
                     this.__data[field].load(value);
                 });
-            } else if (model.__parent.definition[field].hasOwnProperty('modelArray')) {
-                model.__data[field] = new ModelArray(model.__parent.definition[field].subModelArray);
+            } else if (model.__defs[field].hasOwnProperty('modelArray')) {
+                model.__data[field] = new ModelArray(model.__defs[field].subModelArray);
             } else {
-                if (model.__parent.definition[field].required)
-                    model.__data[field] = model.__parent.definition[field].default;
+                if (model.__defs[field].required)
+                    model.__data[field] = model.__defs[field].default;
                 model.__defineSetter__(field, function(value) {
-                    if ((this.__parent.definition.hasOwnProperty('type') && this.__parent.definition.type.validate(value)) || !this.__parent.definition.hasOwnProperty('type')) {
+                    if ((this.__defs.hasOwnProperty('type') && this.__defs.type.validate(value)) || !this.__defs.hasOwnProperty('type')) {
                         this.__data[field] = value;
                     }
                 })
             }
         }.bind(this));
 
+
         model.__loadData = function (value) {
             Object.keys(value).forEach(function (key) {
-                if (this.__parent.definition[key].hasOwnProperty('modelArray')) {
+                if (this.__defs[key].hasOwnProperty('modelArray')) {
                     for (var vidx in value[key]) {
                         this.__data[key].push(value[key][vidx]);
                     }
@@ -145,10 +150,10 @@ function VeryModel(definition) {
 
         model.__toObject = function () {
             var obj = new Object();
-            Object.keys(this.__parent.definition).forEach(function(field) {
-                if (this.__parent.definition[field].hasOwnProperty('model')) {
+            Object.keys(this.__defs).forEach(function(field) {
+                if (this.__defs[field].hasOwnProperty('model')) {
                     obj[field] = this.__data[field].__toObject();
-                } else if (this.__parent.definition[field].hasOwnProperty('modelArray')) {
+                } else if (this.__defs[field].hasOwnProperty('modelArray')) {
                     obj[field] = [];
                     this.__data[field].forEach(function (inst) {
                         obj[field].push(inst.__toObject());
@@ -165,38 +170,47 @@ function VeryModel(definition) {
         };
 
         model.__validate = function () {
-            var errors = {};
-            Object.keys(this.__parent.definition).forEach(function(field) {
+            var errors = [];
+            Object.keys(this.__defs).forEach(function(field) {
+                var fidx;
                 var merrors;
-                if (this.__parent.definition[field].required && !this.__data.hasOwnProperty(field)) {
-                    errors[field] = 'Required and not set.';
-                    return;
-                }
-                if (this.__parent.definition[field].hasOwnProperty('model') && this.__data.hasOwnProperty(field)) {
-                    merrors = this.__data[field].__validate();
-                    if (merrors.errored === true) {
-                        errors[field] = merrors.errors;
+                if (this.__defs[field].depends) {
+                    for (fidx in this.__defs[field].depends) {
+                        merrors = this.__defs[field].depends[fidx].validate(this.__data[fidx]);
+                        merrors.forEach(function (error) {
+                            errors.push(field + ": Dependency  -> " + fidx + ": " + error);
+                        });
                     }
-                } else if (this.__parent.definition[field].hasOwnProperty('modelArray') && this.__data.hasOwnProperty(field)) {
+                }
+                if (this.__defs[field].required && !this.__data.hasOwnProperty(field)) {
+                    errors.push(field + ": required");
+                }
+                if (this.__defs[field].hasOwnProperty('model') && this.__data.hasOwnProperty(field)) {
+                    merrors = this.__data[field].__validate();
+                    for (var eidx in merrors) {
+                        merrors[eidx] = field + '.' + merrors[eidx];
+                    }
+                    errors = errors.concat(merrors);
+                } else if (this.__defs[field].hasOwnProperty('modelArray') && this.__data.hasOwnProperty(field)) {
                     var arrayerrors = [];
+                    var idx = 0;
                     this.__data[field].forEach( function (model) {
                         merrors = model.__validate();
-                        if (merrors.errored === true) {
-                            arrayerrors.push(merrors.error);
+                        for (var eidx in merrors) {
+                            merrors[eidx] = field + '[' + idx + '].' + merrors[eidx];
                         }
+                        errors = errors.concat(merrors);
+                        idx += 1;
                     });
-                    if (arrayerrors.length) {
-                        errors[field] = arrayerrors;
-                    }
-                } else if (this.__data.hasOwnProperty(field) && this.__parent.definition[field].hasOwnProperty('type')) {
-                    merrors = this.__parent.definition[field].type.validate(this.__data[field]);
-                    if (merrors.length > 0) {
-                        errors[field] = merrors;
-                    }
+                } else if (this.__data.hasOwnProperty(field) && this.__defs[field].hasOwnProperty('type')) {
+                    merrors = this.__defs[field].type.validate(this.__data[field]);
+                    merrors.forEach(function (error) {
+                        errors.push(field + ": " + error);
+                    });
                 }
 
             }.bind(this));
-            return {errored: Object.keys(errors).length > 0, errors: errors};
+            return errors;
         };
 
         model.__toJSON = function () {
@@ -206,7 +220,10 @@ function VeryModel(definition) {
         if (typeof value !== 'undefined') {
             model.__loadData(value);
         }
-
+        
+        builds.forEach(function (build) {
+            build(model);
+        });
 
         return model;
     };
