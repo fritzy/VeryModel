@@ -11,19 +11,23 @@ A JavaScript model system for validation, creation, and editing of models.
 
 Model defintions are recursive Javascript object. At each layer, you can have the following fields:
 
-`required` (boolean)
+`required` (boolean) Error on validation if this field isn't set.
 
-`type` (`VeryType`)
+`type` (`VeryType`) VeryType chain to validate field against if set.
 
-`default` (any)
+`default` (any) Default value set automatically.
 
-`model` (definition object or `VeryModel`)
+`model` (definition object or `VeryModel`) set this field as another model.
 
-`modelArray` (definition object or `VeryModel`)
+`modelArray` (definition object or `VeryModel`) set this field as a collection of a model.
 
-`derive` (`function`)
+`derive` (`function`) Derive the value of this field with this function whenever it is accessed.
 
-`depends` (`{some_other_field: VeryType}, ...`)
+    {derive: function(model) {return model.first + ' ' + model.last}}
+
+`depends` (`{some_other_field: VeryType or true}, ...`) Require other fields when this field is set, optionally run VeryType chain check on other field.
+
+#### Example Definition
 
     var generaldef = {
         name: {
@@ -50,8 +54,29 @@ Model defintions are recursive Javascript object. At each layer, you can have th
         }
     };
 
+### Models
 
-### `VeryModel`
+Models can be treated like normal objects. Each field has a getter/setter.
+Models also refer to their `__parent`
+
+`__loadData(data)`
+
+Rather than setting fields individually, set them en masse with an object.
+
+`__toObject()`
+
+Export an object with no getters, setters, state, etc... just the object with derived fields.
+
+`__validate()`
+
+returns an array of error strings.
+
+`__toJSON()`
+
+helper for `JSON.stringify(model.__toObject());`
+
+
+### VeryModel
 
 This class interprets defintions and spawns models from `create`.
 
@@ -83,3 +108,19 @@ Output:
 
     []
 
+Let's see what our object looks like:
+
+    console.log(stanley.__toObject());
+
+Output:
+
+    { name:
+       { last: 'Stanley',
+         title: 'Major-General',
+         full: 'Major-General Stanley' },
+      knowledge:
+       [ { name: 'animalculous', category: 'animal' },
+         { name: 'calculus', category: 'vegetable' } ],
+      rank: 'Major-General' }
+
+Noticed that the derived field, `name.full` was populated.

@@ -67,7 +67,7 @@ var generaldef = {
         model: {
             first: {required: false, type: VeryType().isAlpha().len(2, 25)},
             last: {required: false, type: VeryType().isAlpha().len(3, 25)},
-            title: {depends: {last: VeryType().isAlpha().len(3, 25)}},
+            title: {depends: {last: true}},
             full: {derive: function (name) {
                 return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
                 }
@@ -93,6 +93,9 @@ name: {title: 'Major-General', last: 'Stanley'},
 rank: 'Major-General',
 knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}]
 });
+var errors = stanley.__validate();
+console.log(errors);
+stanley.knowledge[1].category = 'vegetable';
 var errors = stanley.__validate();
 console.log(errors);
 console.log(stanley.__toObject());
