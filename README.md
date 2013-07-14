@@ -3,6 +3,18 @@ VeryModel
 
 A JavaScript model system for validation, creation, and editing of models.
 
+## OK, But What Is It?
+
+Models are useful for managing the lifecycle of an object.
+
+Examples:
+
+* Validate network and user input.
+* Store and load data consistently.
+* Generating derived data automatically.
+
+Basically, VeryModel provides an interface to your data that keeps things consistent.
+
 ## Install
 
 `npm install verymodel`
@@ -31,6 +43,8 @@ Model defintions are recursive Javascript object. At each layer, you can have th
 
 `depends` (`{some_other_field: VeryType or true}, ...`) Require other fields when this field is set, optionally run VeryType chain check on other field.
 
+`primary_key` (`boolean`) Set this on one of your fiels for easy saving and loading.
+
 #### Example Definition
 
     var generaldef = {
@@ -39,7 +53,7 @@ Model defintions are recursive Javascript object. At each layer, you can have th
             model: {
                 first: {required: false, type: VeryType().isAlpha().len(2, 25)},
                 last: {required: false, type: VeryType().isAlpha().len(3, 25)},
-                title: {depends: {last: VeryType().isAlpha().len(3, 25)}},
+                title: {depends: {last: true},
                 full: {derive: function (name) {
                     return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
                     }
