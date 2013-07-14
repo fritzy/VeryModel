@@ -2,7 +2,9 @@ var veryimport = require('../index');
 var VeryModel = veryimport.VeryModel;
 var VeryType = veryimport.VeryType;
 
-console.log(veryimport);
+var unit = require('nodeunit');
+
+unit.
 
 x = VeryType();
 x.isInt().notNull();
