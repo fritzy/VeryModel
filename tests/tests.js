@@ -21,7 +21,7 @@ module.exports = {
                     }
                 }
             },
-            knowledge: {modelArray: {
+            knowledge: {collection: {
                     name: {required: true},
                     category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
                 }
@@ -71,6 +71,34 @@ module.exports = {
         var errors = model.__validate();
         test.ok(errors.length === 0);
         test.done();
-    }
+    },
+    'Arrays Validate': function (test) {
+        var Args = new VeryModel({atest: {array: [VeryType().isInt(), VeryType().isAlpha()]}});
+        var m = Args.create({atest: [1, 'Cheese']});
+        test.ok(m.__validate().length === 0);
+        test.done();
+    },
+    'Arrays Fail to Validate': function (test) {
+        var Args = new VeryModel({atest: {array: [VeryType().isInt(), VeryType().isAlpha()]}});
+        var m = Args.create({atest: [1, 'Cheese1']});
+        test.ok(m.__validate().length === 1);
+        test.done();
+    },
+    'Model Arrays': function (test) {
+        var List = new VeryModel([
+            {required: true, type: VeryType().isInt(), keyword: 'arg1'},
+            {keyword: 'arg2', default: 'crap'},
+            {type: VeryType().isAlpha(), keyword: 'arg3'},
+        ], {array_length:7});
+        var list = List.create([1, 'hi']);
+        var errors = list.__validate();
+        test.ok(errors.length === 0);
+        test.ok(Array.isArray(list.__data));
+        test.ok(list.__data.length === 3);
+        test.ok(list.arg3 === list[2]);
+        test.ok(Array.isArray(list.__toObject()));
+        test.ok(!Array.isArray(list.__toObject({useKeywords:true})));
+        test.done();
+    },
 };
 

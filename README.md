@@ -35,7 +35,7 @@ Model defintions are recursive Javascript object. At each layer, you can have th
 
 `model` (definition object or `VeryModel`) set this field as another model.
 
-`modelArray` (definition object or `VeryModel`) set this field as a collection of a model.
+`collection` (definition object or `VeryModel`) set this field as a collection of a model.
 
 `derive` (`function`) Derive the value of this field with this function whenever it is accessed.
 
@@ -60,7 +60,7 @@ Model defintions are recursive Javascript object. At each layer, you can have th
                 }
             }
         },
-        knowledge: {modelArray: {
+        knowledge: {collection: {
                 name: {required: true},
                 category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
             }

@@ -46,16 +46,24 @@ function VeryType() {
             }
         }
         return this.errors;
-    }
+    };
+
+    this.isType = function (value, type) {
+        return (typeof value === type);
+    };
+
+    this.isArray = function (value) {
+        return (Array.isArray(value));
+    };
 
 }).call(VeryType.prototype);
 
 
-/* ModelArray: array-like object
+/* VeryCollection: array-like object
  * for managaging lists/collections of models
  * of a single model type
  */
-function ModelArray(modeldef, parent) {
+function VeryCollection(modeldef, parent) {
     this.modeldef = modeldef;
     this.parent = parent;
 
@@ -98,13 +106,16 @@ function ModelArray(modeldef, parent) {
     };
 
     
-}).call(ModelArray.prototype);
+}).call(VeryCollection.prototype);
 
 
 /* VeryModel, for spawning models out of a definition
  */
-function VeryModel(definition) {
+function VeryModel(definition, args) {
+    args = args || {};
     this.definition = definition;
+    this.savecb = args.saveFunction;
+    this.loadcb = args.loadFunction;
 
     //initialize sub model definitions recursively
     this.fields = Object.keys(definition);
@@ -119,15 +130,15 @@ function VeryModel(definition) {
                 //initialize sub VeryModel
                 this.definition[field].subModel = new VeryModel(this.definition[field].model);
             }
-        } else if (this.definition[field].hasOwnProperty('modelArray')) {
+        } else if (this.definition[field].hasOwnProperty('collection')) {
             //if we get a VeryModel instance instead of a definition object
             //we have to switch things up
-            if (this.definition[field].modelArray instanceof VeryModel) {
-                this.definition[field].subModelArray = this.definition[field].modelArray;
-                this.definition[field].modelArray = this.definition[field].subModelArray.definition;
+            if (this.definition[field].collection instanceof VeryModel) {
+                this.definition[field].subVeryCollection = this.definition[field].collection;
+                this.definition[field].collection = this.definition[field].subVeryCollection.definition;
             } else {
                 //initialize sub model defintion
-                this.definition[field].subModelArray = new VeryModel(this.definition[field].modelArray);
+                this.definition[field].subVeryCollection = new VeryModel(this.definition[field].collection);
             }
         }
     }.bind(this));
@@ -143,9 +154,25 @@ function VeryModel(definition) {
         var model = new Object;
         model.__defs = this.definition;
         model.__data = {};
+        if (Array.isArray(model.__defs)) {
+            model.__data = [];
+        }
+        model.__map = {};
+        model.__reverse_map = {};
+        model.__primary_key = null;
         //run through the definition fields
         this.fields.forEach(function(field) {
             //hidden value attribute accessor
+            if (typeof model.__defs[field].keyword !== 'undefined') {
+                model.__map[model.__defs[field].keyword] = field;
+                model.__reverse_map[field] = model.__defs[field].keyword;
+                model.__defineGetter__(model.__defs[field].keyword, function() {
+                    return model[model.__map[model.__defs[field].keyword]];
+                });
+            }
+            if (model.__defs[field].primary === true) {
+                model.__primary_key = field;
+            }
             model.__defineGetter__(field, function() {
                 if (this.__defs[field].hasOwnProperty('derive')) {
                     this.__data[field] = this.__defs[field].derive(this);
@@ -161,9 +188,9 @@ function VeryModel(definition) {
                 model.__defineSetter__(field, function(value) {
                     this.__data[field].__loadData(value);
                 });
-            } else if (model.__defs[field].hasOwnProperty('modelArray')) {
+            } else if (model.__defs[field].hasOwnProperty('collection')) {
                 //create an array-like object for a collection of the sub model
-                model.__data[field] = new ModelArray(model.__defs[field].subModelArray, model);
+                model.__data[field] = new VeryCollection(model.__defs[field].subVeryCollection, model);
             } else {
                 //assign the default value to required fields
                 //this could get overwritten later at the __loadData phase
@@ -184,33 +211,55 @@ function VeryModel(definition) {
         //load data en masse into the model
         //works recursively
         model.__loadData = function (value) {
-            Object.keys(value).forEach(function (key) {
-                if (this.__defs[key].hasOwnProperty('modelArray')) {
-                    for (var vidx in value[key]) {
-                        this.__data[key].push(value[key][vidx]);
+            if (Array.isArray(this.__defs)) {
+                this.__data = [];
+                var valueoff = 0;
+                for (var vidx in this.__defs) {
+                    if (!this.__defs[vidx].required && value.length + valueoff < this.__defs.length) {
+                        this[vidx] = this.__defs[vidx].default;
+                        valueoff += 1;
+                    } else {
+                        this[vidx] = value[vidx - valueoff];
                     }
-                } else {
-                    model[key] = value[key];
                 }
-            }.bind(this));
+            } else {
+                Object.keys(value).forEach(function (key) {
+                    if (this.__defs[key].hasOwnProperty('collection')) {
+                        for (var vidx in value[key]) {
+                            this.__data[key].push(value[key][vidx]);
+                        }
+                    } else {
+                        model[key] = value[key];
+                    }
+                }.bind(this));
+            }
         };
 
         //create a raw Javascript object out of the model data
         //no more helper functions or accessors
-        model.__toObject = function () {
-            var obj = new Object();
+        model.__toObject = function (opts) {
+            opts = opts || {};
+            if (Array.isArray(this.__defs) && !opts.useKeywords) {
+                var obj = new Array();
+            } else {
+                var obj = new Object();
+            }
             Object.keys(this.__defs).forEach(function(field) {
+                var key = field;
+                if (opts.useKeywords && this.__reverse_map.hasOwnProperty(field)) {
+                    key = this.__reverse_map[field];
+                }
                 if (this.__defs[field].hasOwnProperty('model')) {
-                    obj[field] = this.__data[field].__toObject();
-                } else if (this.__defs[field].hasOwnProperty('modelArray')) {
-                    obj[field] = [];
+                    obj[key] = this.__data[field].__toObject();
+                } else if (this.__defs[field].hasOwnProperty('collection')) {
+                    obj[key] = [];
                     this.__data[field].forEach(function (inst) {
-                        obj[field].push(inst.__toObject());
+                        obj[key].push(inst.__toObject());
                     });
                 } else {
-                    obj[field] = this[field];
-                    if (typeof obj[field] === 'undefined') {
-                        delete obj[field];
+                    obj[key] = this[field];
+                    if (typeof obj[key] === 'undefined') {
+                        delete obj[key];
                     }
                 }
 
@@ -258,7 +307,7 @@ function VeryModel(definition) {
                 //if field is an array of models
                 //recursively validate them
                 //and add their errors to our own
-                } else if (this.__defs[field].hasOwnProperty('modelArray') && this.__data.hasOwnProperty(field)) {
+                } else if (this.__defs[field].hasOwnProperty('collection') && this.__data.hasOwnProperty(field)) {
                     var arrayerrors = [];
                     var idx = 0;
                     this.__data[field].forEach( function (model) {
@@ -275,6 +324,15 @@ function VeryModel(definition) {
                     merrors.forEach(function (error) {
                         errors.push(field + ": " + error);
                     });
+                } else if (this.__data.hasOwnProperty(field) && this.__defs[field].hasOwnProperty('array')) {
+                    var tidx = 0;
+                    this.__defs[field].array.forEach(function (type) {
+                        merrors = type.validate(this.__data[field][tidx]);
+                        merrors.forEach(function (error) {
+                            errors.push(field + "[" + tidx + "]: " + error);
+                        });
+                        tidx++;
+                    }.bind(this));
                 }
 
             }.bind(this));
@@ -290,15 +348,23 @@ function VeryModel(definition) {
         if (typeof value !== 'undefined') {
             model.__loadData(value);
         }
-        
 
         return model;
+    };
+    
+    this.setSave = function (savecb) {
+        this.savecb = savecb;
+    };
+
+    this.setLoad = function  (loadcb) {
+        this.loaddb = loaddb;
     };
 
 }).call(VeryModel.prototype);
 
 module.exports = {
     VeryModel: VeryModel,
-    VeryType: function () { return new VeryType; }
+    VeryType: function () { return new VeryType; },
+    VeryCollection: VeryCollection,
 };
 
