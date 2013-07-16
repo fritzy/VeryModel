@@ -5,7 +5,8 @@ A JavaScript model system for validation, creation, and editing of models.
 
 ## OK, But What Is It?
 
-Models are useful for managing the lifecycle of an object.
+Models are useful for managing the lifecycle of an object.  
+They are commonly used for framework ORMs (Object Relational Managers) and the M in MVC (Model-View-Controller) patterns like Backbone.js.
 
 ### Load Network Data, Giving Proper Errors, Save It
 
@@ -74,7 +75,6 @@ Which would send
         var args = doItArgs.create(arguments);
         var errors = args.__validate();
         args.cb(errors, args.msg, args.save);
-
     }
 
     doIt('hi there', function(err, msg, save) {
