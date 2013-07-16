@@ -16,9 +16,9 @@ Models are useful for managing the lifecycle of an object.
     }
 
     var User = new VeryModel({
-        id: {primary: true, type: VeryType().isAlphanumeric()},
-        username: {required: true, VeryType().isAlphanumeric().len(4, 25)},
-        password: {required: false, VeryType().len(6).custom(goodPassword)},
+        id: {primary: true, type: VeryType().isAlphanumeric(), default: 1},
+        username: {required: true, VeryType().isAlphanumeric().len(4, 25), default: ''},
+        password: {required: false, VeryType().len(6).custom(goodPassword)}, default: ''},
         passhash: {private: true},
     });
 
@@ -54,6 +54,32 @@ Models are useful for managing the lifecycle of an object.
 
 ### Create a fresh object with default values.
 
+    this.new = function (req, res) {
+        res.send(200, User.create().__toObject());
+    };
+
+Which would send
+
+    {id: 1, username: '', password: ''}
+
+### Validate and Name Function Arguments
+
+    doItArgs = new VeryModel([
+        {required: true, keyword: 'msg'},
+        {required: false, keyword: 'save', default: false, type: 'boolean'},
+        {required: true, keyword: 'cb', type: 'function'}
+    ]);
+
+    function doIt() {
+        var args = doItArgs.create(arguments);
+        var errors = args.__validate();
+        args.cb(errors, args.msg, args.save);
+
+    }
+
+    doIt('hi there', function(err, msg, save) {
+        console.log("Made it!");
+    });
 
 ## Install
 

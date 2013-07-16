@@ -69,6 +69,8 @@ var Types = {
     'alphanumeric': new VeryType().isAlphanumeric(),
     'date': new VeryType().isDate(),
     'email': new VeryType().isEmail(),
+    'boolean': new VeryType().isType('boolean'),
+    'function': new VeryType().isType('function'),
 };
 
 

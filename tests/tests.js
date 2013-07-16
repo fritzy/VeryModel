@@ -146,5 +146,27 @@ module.exports = {
         test.ok(userobj.hasOwnProperty('password'));
         test.done()
     },
+    'Validate Arguments': function (test) {
+        doItArgs = new VeryModel([
+            {required: true, keyword: 'msg'},
+            {required: false, keyword: 'save', default: false},
+            {required: true, keyword: 'cb'}
+        ]);
+
+        function doIt() {
+            var args = doItArgs.create(arguments);
+            var errors = args.__validate();
+            args.cb(errors, args.msg, args.save)
+        }
+
+        doIt('hi there', function(err, msg, save) {
+            test.ok(msg === 'hi there', "msg matches");
+            test.ok(save === false, "save is fasle");
+            test.ok(err.length === 0), "no errors";
+            test.done();
+        });
+    },
+        
+
 };
 
