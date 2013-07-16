@@ -76,6 +76,7 @@ Using an array definition, we can use VeryModel help manage function arguments (
 
     doItArgs = new VeryModel([
         {required: true, keyword: 'msg'},
+        {required: true, type: VeryType().isIn('small', 'big', 'huge'), default: 'small'},
         {required: false, keyword: 'save', default: false, type: 'boolean'},
         {required: true, keyword: 'cb', type: 'function'}
     ]);
@@ -83,10 +84,10 @@ Using an array definition, we can use VeryModel help manage function arguments (
     function doIt() {
         var args = doItArgs.create(arguments);
         var errors = args.__validate();
-        args.cb(errors, args.msg, args.save);
+        args.cb(errors, args.type, args.msg, args.save);
     }
 
-    doIt('hi there', function(err, msg, save) {
+    doIt('hi there', function(err, type, msg, save) {
         console.log("Made it!");
     });
 
@@ -107,8 +108,7 @@ Model defintions are recursive Javascript object. At each layer, you can have th
 * `default` (any): Default value set automatically.
 * `model` (definition object or VeryModel): set this field as another model.
 * `collection` (definition object or VeryModel): set this field as a collection of a model.
-*  `derive` `function`): Derive the value of this field with this function whenever field is accessed
-
+* `derive` `function`): Derive the value of this field with this function whenever field is accessed
     `{derive: function(model) {return model.first + ' ' + model.last}`
 * `depends` ({some_other_field: VeryType or true}, ...): Require other fields when this field is set, optionally run VeryType chain check on other field.
 * `primary` (boolean): Set this on one of your fiels for easy saving and loading.
