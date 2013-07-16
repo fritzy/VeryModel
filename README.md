@@ -93,23 +93,17 @@ Which would send
 
 Model defintions are recursive Javascript object. At each layer, you can have the following fields:
 
-`required` (boolean) Error on validation if this field isn't set.
+* `required` (boolean): Error on validation if this field isn't set.
+* `type` (VeryType): VeryType chain to validate field against if set.
+* `default` (any): Default value set automatically.
+* `model` (definition object or VeryModel): set this field as another model.
+* `collection` (definition object or VeryModel): set this field as a collection of a model.
+*  `derive` `function`): Derive the value of this field with this function whenever field is accessed
 
-`type` (`VeryType`) VeryType chain to validate field against if set.
-
-`default` (any) Default value set automatically.
-
-`model` (definition object or `VeryModel`) set this field as another model.
-
-`collection` (definition object or `VeryModel`) set this field as a collection of a model.
-
-`derive` (`function`) Derive the value of this field with this function whenever it is accessed.
-
-    {derive: function(model) {return model.first + ' ' + model.last}}
-
-`depends` (`{some_other_field: VeryType or true}, ...`) Require other fields when this field is set, optionally run VeryType chain check on other field.
-
-`primary_key` (`boolean`) Set this on one of your fiels for easy saving and loading.
+    `{derive: function(model) {return model.first + ' ' + model.last}`
+* `depends` ({some_other_field: VeryType or true}, ...): Require other fields when this field is set, optionally run VeryType chain check on other field.
+* `primary` (boolean): Set this on one of your fiels for easy saving and loading.
+* `private` (boolean): `__toObject()` will not include this field in expect unless the argumnet usePrivate is true
 
 #### Example Definition
 
