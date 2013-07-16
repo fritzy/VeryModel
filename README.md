@@ -3,6 +3,9 @@ VeryModel
 
 A JavaScript model system for validation, creation, and editing of models.
 
+I wrote this because the robust model systems that I found were tightly integrated with frameworks, or only served to be useful for validation.  
+VeryModel is not tied to a framework, and it implements a full purpose Model system.
+
 ## OK, But What Is It?
 
 Models are useful for managing the lifecycle of an object.  
@@ -20,6 +23,7 @@ function goodPassword(password) {
     return true;
 }
 
+//Create a User Factory
 var User = new VeryModel({
     id: {primary: true, type: VeryType().isAlphanumeric(), default: 1},
     username: {required: true, type: VeryType().isAlphanumeric().len(4, 25), default: ''},
