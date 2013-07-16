@@ -13,56 +13,60 @@ They are commonly used for framework ORMs (Object Relational Managers) and the M
 Pretend we're working in Node.js Express,  
 using VeryModel as an ORM to save, load, and validate models.
 
-    function goodPassword(password) {
-        //test for password being strong
-        //would go here
-        return true;
+```javascript 
+function goodPassword(password) {
+    //test for password being strong
+    //would go here
+    return true;
+}
+
+var User = new VeryModel({
+    id: {primary: true, type: VeryType().isAlphanumeric(), default: 1},
+    username: {required: true, type: VeryType().isAlphanumeric().len(4, 25), default: ''},
+    password: {required: false, type: VeryType().len(6).custom(goodPassword)}, default: ''},
+    passhash: {private: true},
+});
+
+User.setSave(function(model, cb) {
+    if (model.password) {
+        model.passhash = sha1(model.password + 'static salt');
+        model.password = undefined;
     }
+    riak.put(model.id, model.__toJSON({withPrivate: true}), cb);
+});
 
-    var User = new VeryModel({
-        id: {primary: true, type: VeryType().isAlphanumeric(), default: 1},
-        username: {required: true, type: VeryType().isAlphanumeric().len(4, 25), default: ''},
-        password: {required: false, type: VeryType().len(6).custom(goodPassword)}, default: ''},
-        passhash: {private: true},
+User.setLoad(function(id, cb) {
+    riak.get(id, function (err, data) {
+        var model = this.create(data);
+        cb(err, model);
     });
+});
 
-    User.setSave(function(model, cb) {
-        if (model.password) {
-            model.passhash = sha1(model.password + 'static salt');
-            model.password = undefined;
-        }
-        riak.put(model.id, model.__toJSON({withPrivate: true}), cb);
-    });
-
-    User.setLoad(function(id, cb) {
-        riak.get(id, function (err, data) {
-            var model = this.create(data);
-            cb(err, model);
+this.post = function (req, res) {
+    var user = User.create(req.body);
+    var errors = user.__validate();
+    if (errors.length > 0) {
+        res.send(400, errors.join('\n'));
+    } else {
+        var uid = uuid();
+        user.id = uid;
+        user.__save(function() {
+            res.send(201, user.__toObject());
         });
-    });
-
-    this.post = function (req, res) {
-        var user = User.create(req.body);
-        var errors = user.__validate();
-        if (errors.length > 0) {
-            res.send(400, errors.join('\n'));
-        } else {
-            var uid = uuid();
-            user.id = uid;
-            user.__save(function() {
-                res.send(201, user.__toObject());
-            });
-        }
-    };
+    }
+};
+```
 
 
 ### Create a fresh object with default values.
 
 We can also create empty/default objects to work with as a starting point.
 
-    this.new = function (req, res) {
-        res.send(200, User.create().__toObject());
-    };
+```javascript
+this.new = function (req, res) {
+    res.send(200, User.create().__toObject());
+};
+```
 
 Which would send
 
@@ -73,23 +77,24 @@ Which would send
 Model definitions can be objects or arrays.  
 Using an array definition, we can use VeryModel help manage function arguments (mapping, optional arguments, and validation).
     
+```javascript
+doItArgs = new VeryModel([
+    {required: true, keyword: 'msg'},
+    {required: true, type: VeryType().isIn('small', 'big', 'huge'), default: 'small'},
+    {required: false, keyword: 'save', default: false, type: 'boolean'},
+    {required: true, keyword: 'cb', type: 'function'}
+]);
 
-    doItArgs = new VeryModel([
-        {required: true, keyword: 'msg'},
-        {required: true, type: VeryType().isIn('small', 'big', 'huge'), default: 'small'},
-        {required: false, keyword: 'save', default: false, type: 'boolean'},
-        {required: true, keyword: 'cb', type: 'function'}
-    ]);
+function doIt() {
+    var args = doItArgs.create(arguments);
+    var errors = args.__validate();
+    args.cb(errors, args.type, args.msg, args.save);
+}
 
-    function doIt() {
-        var args = doItArgs.create(arguments);
-        var errors = args.__validate();
-        args.cb(errors, args.type, args.msg, args.save);
-    }
-
-    doIt('hi there', function(err, type, msg, save) {
-        console.log("Made it!");
-    });
+doIt('hi there', function(err, type, msg, save) {
+    console.log("Made it!");
+});
+```
 
 ## Install
 
