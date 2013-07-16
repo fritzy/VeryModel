@@ -10,6 +10,9 @@ They are commonly used for framework ORMs (Object Relational Managers) and the M
 
 ### Load Network Data, Giving Proper Errors, Save It
 
+Pretend we're working in Node.js Express,  
+using VeryModel as an ORM to save, load, and validate models.
+
     function goodPassword(password) {
         //test for password being strong
         //would go here
@@ -18,8 +21,8 @@ They are commonly used for framework ORMs (Object Relational Managers) and the M
 
     var User = new VeryModel({
         id: {primary: true, type: VeryType().isAlphanumeric(), default: 1},
-        username: {required: true, VeryType().isAlphanumeric().len(4, 25), default: ''},
-        password: {required: false, VeryType().len(6).custom(goodPassword)}, default: ''},
+        username: {required: true, type: VeryType().isAlphanumeric().len(4, 25), default: ''},
+        password: {required: false, type: VeryType().len(6).custom(goodPassword)}, default: ''},
         passhash: {private: true},
     });
 
@@ -55,6 +58,8 @@ They are commonly used for framework ORMs (Object Relational Managers) and the M
 
 ### Create a fresh object with default values.
 
+We can also create empty/default objects to work with as a starting point.
+
     this.new = function (req, res) {
         res.send(200, User.create().__toObject());
     };
@@ -64,6 +69,10 @@ Which would send
     {id: 1, username: '', password: ''}
 
 ### Validate and Name Function Arguments
+
+Model definitions can be objects or arrays.  
+Using an array definition, we can use VeryModel help manage function arguments (mapping, optional arguments, and validation).
+    
 
     doItArgs = new VeryModel([
         {required: true, keyword: 'msg'},
