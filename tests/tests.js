@@ -55,7 +55,7 @@ module.exports = {
         //done in setup
         test.done();
     },
-    'Should failt': function (test) {
+    'Should fail': function (test) {
         var errors = model.__validate();
         test.ok(errors.length === 1);
         test.done();
@@ -99,6 +99,52 @@ module.exports = {
         test.ok(Array.isArray(list.__toObject()));
         test.ok(!Array.isArray(list.__toObject({useKeywords:true})));
         test.done();
+    },
+    'String Types': function (test) {
+        var StringTypeTest = new VeryModel({somed: {type: 'date'}, somee: {type: 'email'}});
+        var stt = StringTypeTest.create({somed: '2008-02-10', somee: 'nadsf'});
+        var errs = stt.__validate();
+        test.ok(errs.length === 1);
+        stt.somee = 'nathan@andyet.com';
+        errs = stt.__validate();
+        test.ok(errs.length === 0);
+        test.done();
+    },
+    'Save': function (test) {
+        var Model = new VeryModel({
+            test: {required: true}
+        });
+        Model.setSave(function(model, cb) {
+            test.ok(model.test === 'cheese');
+            test.done();
+        });
+        var model = Model.create({test: 'cheese'});
+        model.__save();
+    },
+    'Load': function (test) {
+        var Model = new VeryModel({
+            test: {required: true}
+        });
+        Model.setLoad(function (id, cb) {
+            cb(false, this.create({test:id}));
+        });
+        Model.load('35', function (err, model) {
+            test.ok(model.test === '35');
+            test.done();
+        });
+    },
+    'Private': function (test) {
+        var User = new VeryModel({
+            username: {},
+            password: {private: true},
+        });
+        var user = User.create({username: 'Bill', password: 'bill is pretty awesome'});
+        test.ok(user.password === 'bill is pretty awesome');
+        var userobj = user.__toObject();
+        test.ok(!userobj.hasOwnProperty('password'));
+        userobj = user.__toObject({withPrivate: true});
+        test.ok(userobj.hasOwnProperty('password'));
+        test.done()
     },
 };
 

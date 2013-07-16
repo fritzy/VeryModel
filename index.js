@@ -56,7 +56,20 @@ function VeryType() {
         return (Array.isArray(value));
     };
 
+    this.custom = function(value, func) {
+        return func(value);
+    };
+
 }).call(VeryType.prototype);
+
+
+var Types = {
+    'number': new VeryType().isNumeric(),
+    'alpha': new VeryType().isAlpha(),
+    'alphanumeric': new VeryType().isAlphanumeric(),
+    'date': new VeryType().isDate(),
+    'email': new VeryType().isEmail(),
+};
 
 
 /* VeryCollection: array-like object
@@ -152,6 +165,7 @@ function VeryModel(definition, args) {
      */
     this.create = function (value) {
         var model = new Object;
+        model.__verymodel = this;
         model.__defs = this.definition;
         model.__data = {};
         if (Array.isArray(model.__defs)) {
@@ -246,6 +260,9 @@ function VeryModel(definition, args) {
             }
             Object.keys(this.__defs).forEach(function(field) {
                 var key = field;
+                if (this.__defs[field].private && !opts.withPrivate) {
+                    return;
+                }
                 if (opts.useKeywords && this.__reverse_map.hasOwnProperty(field)) {
                     key = this.__reverse_map[field];
                 }
@@ -320,6 +337,9 @@ function VeryModel(definition, args) {
                     });
                 //if we have a VeryType to validate against, validate it
                 } else if (this.__data.hasOwnProperty(field) && this.__defs[field].hasOwnProperty('type')) {
+                    if (typeof this.__defs[field].type === 'string' && Types.hasOwnProperty(this.__defs[field].type)) {
+                        this.__defs[field].type = Types[this.__defs[field].type];
+                    }
                     merrors = this.__defs[field].type.validate(this.__data[field]);
                     merrors.forEach(function (error) {
                         errors.push(field + ": " + error);
@@ -338,11 +358,19 @@ function VeryModel(definition, args) {
             }.bind(this));
             return errors;
         };
+        
+        model.__clone = function () {
+            return this.__verymodel.create(this.__toObject());
+        };
 
         //generate a JSON string from the model data
-        model.__toJSON = function () {
-            return JSON.stringify(this.__toObject());
-        }
+        model.__toJSON = function (args) {
+            return JSON.stringify(this.__toObject(args));
+        };
+
+        model.__save = function (cb) {
+            this.__verymodel.savecb(this, cb);
+        };
         
         //if model.create passed in initial values, load them
         if (typeof value !== 'undefined') {
@@ -356,9 +384,14 @@ function VeryModel(definition, args) {
         this.savecb = savecb;
     };
 
-    this.setLoad = function  (loadcb) {
+    this.setLoad = function (loaddb) {
         this.loaddb = loaddb;
     };
+
+    this.load = function (id, cb) {
+        this.loaddb(id, cb);
+    };
+
 
 }).call(VeryModel.prototype);
 

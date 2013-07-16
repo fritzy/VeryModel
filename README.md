@@ -7,13 +7,53 @@ A JavaScript model system for validation, creation, and editing of models.
 
 Models are useful for managing the lifecycle of an object.
 
-Examples:
+### Load Network Data, Giving Proper Errors, Save It
 
-* Validate network and user input.
-* Store and load data consistently.
-* Generating derived data automatically.
+    function goodPassword(password) {
+        //test for password being strong
+        //would go here
+        return true;
+    }
 
-Basically, VeryModel provides an interface to your data that keeps things consistent.
+    var User = new VeryModel({
+        id: {primary: true, type: VeryType().isAlphanumeric()},
+        username: {required: true, VeryType().isAlphanumeric().len(4, 25)},
+        password: {required: false, VeryType().len(6).custom(goodPassword)},
+        passhash: {private: true},
+    });
+
+    User.setSave(function(model, cb) {
+        if (model.password) {
+            model.passhash = sha1(model.password + 'static salt');
+            model.password = undefined;
+        }
+        riak.put(model.id, model.__toJSON({withPrivate: true}), cb);
+    });
+
+    User.setLoad(function(id, cb) {
+        riak.get(id, function (err, data) {
+            var model = this.create(data);
+            cb(err, model);
+        });
+    });
+
+    this.post = function (req, res) {
+        var user = User.create(req.body);
+        var errors = user.__validate();
+        if (errors.length > 0) {
+            res.send(400, errors.join('\n'));
+        } else {
+            var uid = uuid();
+            user.id = uid;
+            user.__save(function() {
+                res.send(201, user.__toObject());
+            });
+        }
+    };
+
+
+### Create a fresh object with default values.
+
 
 ## Install
 
