@@ -213,7 +213,11 @@ function VeryModel(definition, args) {
                 //assign the default value to required fields
                 //this could get overwritten later at the loadData phase
                 if (model.__defs[field].required) {
-                    model.__data[field] = model.__defs[field].default;
+                    if (typeof model.__defs[field].default === 'function') {
+                        mode.__data[field] = model.__defs[field].default(model);
+                    } else {
+                        model.__data[field] = model.__defs[field].default;
+                    }
                 }
                 //validate values as they come in
                 //hidden value style setter
@@ -237,7 +241,11 @@ function VeryModel(definition, args) {
                 var valueoff = 0;
                 for (var vidx in this.__defs) {
                     if (!this.__defs[vidx].required && value.length + valueoff < this.__defs.length) {
-                        this[vidx] = this.__defs[vidx].default;
+                        if (this.__defs[vidx].default === 'function') {
+                            this[vidx] = this.__defs[vidx].default(this);
+                        } else {
+                            this[vidx] = this.__defs[vidx].default;
+                        }
                         valueoff += 1;
                     } else {
                         this[vidx] = value[vidx - valueoff];
