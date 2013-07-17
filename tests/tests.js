@@ -166,7 +166,14 @@ module.exports = {
             test.done();
         });
     },
-        
-
+    'Static Fields': function (test) {
+        var Thing = new VeryModel({thinger: {static: true}});
+        var thing = Thing.create({thinger: 'hi'});
+        test.ok(thing.thinger === 'hi');
+        test.throws(function () {
+            thing.thinger = 'crap';
+        });
+        test.done();
+    },
 };
 

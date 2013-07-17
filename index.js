@@ -177,6 +177,7 @@ function VeryModel(definition, args) {
         model.__map = {};
         model.__reverse_map = {};
         model.__primary_key = null;
+        model.__creating = true;
         //run through the definition fields
         this.fields.forEach(function(field) {
             //hidden value attribute accessor
@@ -218,6 +219,9 @@ function VeryModel(definition, args) {
                 //hidden value style setter
                 model.__defineSetter__(field, function(value) {
                     if ((this.__defs.hasOwnProperty('type') && this.__defs.type.validate(value)) || !this.__defs.hasOwnProperty('type')) {
+                        if (this.__defs[field].static === true && !this.__creating) {
+                            throw new Error('Cannot set static values');
+                        }
                         this.__data[field] = value;
                     }
                 })
@@ -379,6 +383,8 @@ function VeryModel(definition, args) {
         if (typeof value !== 'undefined') {
             model.loadData(value);
         }
+
+        model.__creating = false;
 
         return model;
     };
