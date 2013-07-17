@@ -125,6 +125,7 @@ function VeryCollection(modeldef, parent) {
 
 
 /* VeryModel, for spawning models out of a definition
+ * Instances of VeryModel are factories for models themselves.
  */
 function VeryModel(definition, args) {
     args = args || {};
@@ -200,16 +201,16 @@ function VeryModel(definition, args) {
                 //recursively instatiate submodel
                 model.__data[field] = model.__defs[field].subModel.create();
                 model.__data[field].__parent = model;
-                //assigning to the submodel should call __loadData on it
+                //assigning to the submodel should call loadData on it
                 model.__defineSetter__(field, function(value) {
-                    this.__data[field].__loadData(value);
+                    this.__data[field].loadData(value);
                 });
             } else if (model.__defs[field].hasOwnProperty('collection')) {
                 //create an array-like object for a collection of the sub model
                 model.__data[field] = new VeryCollection(model.__defs[field].subVeryCollection, model);
             } else {
                 //assign the default value to required fields
-                //this could get overwritten later at the __loadData phase
+                //this could get overwritten later at the loadData phase
                 if (model.__defs[field].required) {
                     model.__data[field] = model.__defs[field].default;
                 }
@@ -226,7 +227,7 @@ function VeryModel(definition, args) {
 
         //load data en masse into the model
         //works recursively
-        model.__loadData = function (value) {
+        model.loadData = function (value) {
             if (Array.isArray(this.__defs)) {
                 this.__data = [];
                 var valueoff = 0;
@@ -253,7 +254,7 @@ function VeryModel(definition, args) {
 
         //create a raw Javascript object out of the model data
         //no more helper functions or accessors
-        model.__toObject = function (opts) {
+        model.toObject = function (opts) {
             opts = opts || {};
             if (Array.isArray(this.__defs) && !opts.useKeywords) {
                 var obj = new Array();
@@ -269,11 +270,11 @@ function VeryModel(definition, args) {
                     key = this.__reverse_map[field];
                 }
                 if (this.__defs[field].hasOwnProperty('model')) {
-                    obj[key] = this.__data[field].__toObject();
+                    obj[key] = this.__data[field].toObject();
                 } else if (this.__defs[field].hasOwnProperty('collection')) {
                     obj[key] = [];
                     this.__data[field].forEach(function (inst) {
-                        obj[key].push(inst.__toObject());
+                        obj[key].push(inst.toObject());
                     });
                 } else {
                     obj[key] = this[field];
@@ -290,7 +291,7 @@ function VeryModel(definition, args) {
         //works recursively
         //returns a list of errors
         //if the list of errors.length === 0, you're golden
-        model.__validate = function () {
+        model.doValidate = function () {
             var errors = [];
             Object.keys(this.__defs).forEach(function(field) {
                 var fidx;
@@ -318,7 +319,7 @@ function VeryModel(definition, args) {
                 //recursively validate it
                 //add errors to our own
                 if (this.__defs[field].hasOwnProperty('model') && this.__data.hasOwnProperty(field)) {
-                    merrors = this.__data[field].__validate();
+                    merrors = this.__data[field].doValidate();
                     for (var eidx in merrors) {
                         merrors[eidx] = field + '.' + merrors[eidx];
                     }
@@ -330,7 +331,7 @@ function VeryModel(definition, args) {
                     var arrayerrors = [];
                     var idx = 0;
                     this.__data[field].forEach( function (model) {
-                        merrors = model.__validate();
+                        merrors = model.doValidate();
                         for (var eidx in merrors) {
                             merrors[eidx] = field + '[' + idx + '].' + merrors[eidx];
                         }
@@ -361,22 +362,22 @@ function VeryModel(definition, args) {
             return errors;
         };
         
-        model.__clone = function () {
-            return this.__verymodel.create(this.__toObject());
+        model.makeClone = function () {
+            return this.__verymodel.create(this.toObject());
         };
 
         //generate a JSON string from the model data
-        model.__toJSON = function (args) {
-            return JSON.stringify(this.__toObject(args));
+        model.toJSON = function (args) {
+            return JSON.stringify(this.toObject(args));
         };
 
-        model.__save = function (cb) {
+        model.doSave = function (cb) {
             this.__verymodel.savecb(this, cb);
         };
         
         //if model.create passed in initial values, load them
         if (typeof value !== 'undefined') {
-            model.__loadData(value);
+            model.loadData(value);
         }
 
         return model;

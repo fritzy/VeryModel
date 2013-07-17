@@ -36,7 +36,7 @@ User.setSave(function(model, cb) {
         model.passhash = sha1(model.password + 'static salt');
         model.password = undefined;
     }
-    riak.put(model.id, model.__toJSON({withPrivate: true}), cb);
+    riak.put(model.id, model.toJSON({withPrivate: true}), cb);
 });
 
 User.setLoad(function(id, cb) {
@@ -48,14 +48,14 @@ User.setLoad(function(id, cb) {
 
 this.post = function (req, res) {
     var user = User.create(req.body);
-    var errors = user.__validate();
+    var errors = user.doValidate();
     if (errors.length > 0) {
         res.send(400, errors.join('\n'));
     } else {
         var uid = uuid();
         user.id = uid;
-        user.__save(function() {
-            res.send(201, user.__toObject());
+        user.doSave(function() {
+            res.send(201, user.toObject());
         });
     }
 };
@@ -68,7 +68,7 @@ We can also create empty/default objects to work with as a starting point.
 
 ```javascript
 this.new = function (req, res) {
-    res.send(200, User.create().__toObject());
+    res.send(200, User.create().toObject());
 };
 ```
 
@@ -91,7 +91,7 @@ doItArgs = new VeryModel([
 
 function doIt() {
     var args = doItArgs.create(arguments);
-    var errors = args.__validate();
+    var errors = args.doValidate();
     args.cb(errors, args.type, args.msg, args.save);
 }
 
@@ -121,7 +121,7 @@ Model defintions are recursive Javascript object. At each layer, you can have th
     `{derive: function(model) {return model.first + ' ' + model.last}`
 * `depends` ({some_other_field: VeryType or true}, ...): Require other fields when this field is set, optionally run VeryType chain check on other field.
 * `primary` (boolean): Set this on one of your fiels for easy saving and loading.
-* `private` (boolean): `__toObject()` will not include this field in expect unless the argumnet usePrivate is true
+* `private` (boolean): `toObject()` will not include this field in expect unless the argumnet usePrivate is true
 
 #### Example Definition
 
@@ -155,21 +155,21 @@ Model defintions are recursive Javascript object. At each layer, you can have th
 Models can be treated like normal objects. Each field has a getter/setter.
 Models also refer to their `__parent`
 
-`__loadData(data)`
+`loadData(data)`
 
 Rather than setting fields individually, set them en masse with an object.
 
-`__toObject()`
+`toObject()`
 
 Export an object with no getters, setters, state, etc... just the object with derived fields.
 
-`__validate()`
+`doValidate()`
 
 returns an array of error strings.
 
-`__toJSON()`
+`toJSON()`
 
-helper for `JSON.stringify(model.__toObject());`
+helper for `JSON.stringify(model.toObject());`
 
 
 ### VeryModel
@@ -184,7 +184,7 @@ Initialize with a definition.
         rank: 'Major-General',
         knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}]
     });
-    var errors = stanley.__validate();
+    var errors = stanley.doValidate();
     console.log(errors);
 
 Output:
@@ -197,7 +197,7 @@ Turns out he knows more than just animals, vegetables, minerals.
 
 That ought to do it.
     
-    var errors = stanley.__validate();
+    var errors = stanley.doValidate();
     console.log(errors);
 
 Output:
@@ -206,7 +206,7 @@ Output:
 
 Let's see what our object looks like:
 
-    console.log(stanley.__toObject());
+    console.log(stanley.toObject());
 
 Output:
 

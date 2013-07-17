@@ -34,7 +34,7 @@ module.exports = {
         };
         MajorGeneral = new VeryModel(generaldef);
         model = MajorGeneral.create();
-        model.__loadData({
+        model.loadData({
             name: {title: 'Major-General', last: 'Stanley'},
             rank: 'Major-General',
             knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}]
@@ -56,32 +56,32 @@ module.exports = {
         test.done();
     },
     'Should fail': function (test) {
-        var errors = model.__validate();
+        var errors = model.doValidate();
         test.ok(errors.length === 1);
         test.done();
     },
     'Edit a VeryModel': function (test) {
         model.rank = 'Private';
-        test.ok(model.__toObject().rank === 'Private');
+        test.ok(model.toObject().rank === 'Private');
         test.done();
     },
     'Validate passes': function (test) {
         model.knowledge[1].category = 'vegetable';
         test.ok(model.knowledge[1].category == 'vegetable');
-        var errors = model.__validate();
+        var errors = model.doValidate();
         test.ok(errors.length === 0);
         test.done();
     },
     'Arrays Validate': function (test) {
         var Args = new VeryModel({atest: {array: [VeryType().isInt(), VeryType().isAlpha()]}});
         var m = Args.create({atest: [1, 'Cheese']});
-        test.ok(m.__validate().length === 0);
+        test.ok(m.doValidate().length === 0);
         test.done();
     },
     'Arrays Fail to Validate': function (test) {
         var Args = new VeryModel({atest: {array: [VeryType().isInt(), VeryType().isAlpha()]}});
         var m = Args.create({atest: [1, 'Cheese1']});
-        test.ok(m.__validate().length === 1);
+        test.ok(m.doValidate().length === 1);
         test.done();
     },
     'Model Arrays': function (test) {
@@ -91,22 +91,22 @@ module.exports = {
             {type: VeryType().isAlpha(), keyword: 'arg3'},
         ], {array_length:7});
         var list = List.create([1, 'hi']);
-        var errors = list.__validate();
+        var errors = list.doValidate();
         test.ok(errors.length === 0);
         test.ok(Array.isArray(list.__data));
         test.ok(list.__data.length === 3);
         test.ok(list.arg3 === list[2]);
-        test.ok(Array.isArray(list.__toObject()));
-        test.ok(!Array.isArray(list.__toObject({useKeywords:true})));
+        test.ok(Array.isArray(list.toObject()));
+        test.ok(!Array.isArray(list.toObject({useKeywords:true})));
         test.done();
     },
     'String Types': function (test) {
         var StringTypeTest = new VeryModel({somed: {type: 'date'}, somee: {type: 'email'}});
         var stt = StringTypeTest.create({somed: '2008-02-10', somee: 'nadsf'});
-        var errs = stt.__validate();
+        var errs = stt.doValidate();
         test.ok(errs.length === 1);
         stt.somee = 'nathan@andyet.com';
-        errs = stt.__validate();
+        errs = stt.doValidate();
         test.ok(errs.length === 0);
         test.done();
     },
@@ -119,7 +119,7 @@ module.exports = {
             test.done();
         });
         var model = Model.create({test: 'cheese'});
-        model.__save();
+        model.doSave();
     },
     'Load': function (test) {
         var Model = new VeryModel({
@@ -140,9 +140,9 @@ module.exports = {
         });
         var user = User.create({username: 'Bill', password: 'bill is pretty awesome'});
         test.ok(user.password === 'bill is pretty awesome');
-        var userobj = user.__toObject();
+        var userobj = user.toObject();
         test.ok(!userobj.hasOwnProperty('password'));
-        userobj = user.__toObject({withPrivate: true});
+        userobj = user.toObject({withPrivate: true});
         test.ok(userobj.hasOwnProperty('password'));
         test.done()
     },
@@ -155,7 +155,7 @@ module.exports = {
 
         function doIt() {
             var args = doItArgs.create(arguments);
-            var errors = args.__validate();
+            var errors = args.doValidate();
             args.cb(errors, args.msg, args.save)
         }
 
