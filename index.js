@@ -136,25 +136,34 @@ function VeryModel(definition, args) {
     //initialize sub model definitions recursively
     this.fields = Object.keys(definition);
     this.fields.forEach(function (field) {
+        var submodel;
         if (this.definition[field].hasOwnProperty('model')) {
             //if we get a VeryModel instance instead of a definition object
             //we have to switch things up
-            if (this.definition[field].model instanceof VeryModel) {
-                this.definition[field].subModel = this.definition[field].model;
+            submodel = this.definition[field].model;
+            if (submodel === 'this') {
+                submodel = this;
+            }
+            if (submodel instanceof VeryModel) {
+                this.definition[field].subModel = submodel;
                 this.definition[field].model = this.definition[field].subModel.definition;
             } else {
                 //initialize sub VeryModel
-                this.definition[field].subModel = new VeryModel(this.definition[field].model);
+                this.definition[field].subModel = new VeryModel(submodel);
             }
         } else if (this.definition[field].hasOwnProperty('collection')) {
             //if we get a VeryModel instance instead of a definition object
             //we have to switch things up
-            if (this.definition[field].collection instanceof VeryModel) {
-                this.definition[field].subVeryCollection = this.definition[field].collection;
+            submodel = this.definition[field].collection;
+            if (submodel === 'this') {
+                submodel = this;
+            }
+            if (submodel instanceof VeryModel) {
+                this.definition[field].subVeryCollection = submodel;
                 this.definition[field].collection = this.definition[field].subVeryCollection.definition;
             } else {
                 //initialize sub model defintion
-                this.definition[field].subVeryCollection = new VeryModel(this.definition[field].collection);
+                this.definition[field].subVeryCollection = new VeryModel(submodel);
             }
         }
     }.bind(this));
@@ -253,6 +262,7 @@ function VeryModel(definition, args) {
                 }
             } else {
                 Object.keys(value).forEach(function (key) {
+                    if (!this.__defs.hasOwnProperty(key)) return;
                     if (this.__defs[key].hasOwnProperty('collection')) {
                         for (var vidx in value[key]) {
                             this.__data[key].push(value[key][vidx]);
