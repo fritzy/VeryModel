@@ -1,6 +1,6 @@
 {
   "name": "verymodel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/fritzy/VeryModel",
   "repository": {
     "type": "git",
@@ -8,7 +8,9 @@
   },
   "description": "A full model system without the framework",
   "dependencies": {
-      "validator": "*",
+      "validator": "*"
+  },
+  "devDependencies": {
       "nodeunit": "*"
   },
   "scripts": {
