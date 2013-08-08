@@ -1,6 +1,6 @@
-var Validator = require('validator').Validator;
+var Validator  = require('validator').Validator;
 var validators = require('validator').validators;
-var check = require('validator').check;
+var check      = require('validator').check;
 
 /*VeryType is a wrapper for node-validator, that allows you to re-use
  * validation chains.
@@ -8,8 +8,8 @@ var check = require('validator').check;
  */
 function VeryType() {
     this.validations = [];
-    this.v = new Validator;
-    this.errors = [];
+    this.v           = new Validator;
+    this.errors      = [];
 
     //override Validator errors so exceptions aren't raised
     //and so that we can gather error messages
@@ -64,13 +64,13 @@ function VeryType() {
 
 
 var Types = {
-    'number': new VeryType().isNumeric(),
-    'alpha': new VeryType().isAlpha(),
-    'alphanumeric': new VeryType().isAlphanumeric(),
-    'date': new VeryType().isDate(),
-    'email': new VeryType().isEmail(),
-    'boolean': new VeryType().isType('boolean'),
-    'function': new VeryType().isType('function'),
+    'number'       : new VeryType().isNumeric(),
+    'alpha'        : new VeryType().isAlpha(),
+    'alphanumeric' : new VeryType().isAlphanumeric(),
+    'date'         : new VeryType().isDate(),
+    'email'        : new VeryType().isEmail(),
+    'boolean'      : new VeryType().isType('boolean'),
+    'function'     : new VeryType().isType('function'),
 };
 
 
@@ -187,6 +187,7 @@ function VeryModel(definition, args) {
         model.__reverse_map = {};
         model.__primary_key = null;
         model.__creating = true;
+        model.__is_empty = true;
         //run through the definition fields
         this.fields.forEach(function(field) {
             //hidden value attribute accessor
@@ -236,6 +237,7 @@ function VeryModel(definition, args) {
                             throw new Error('Cannot set static values');
                         }
                         this.__data[field] = value;
+                        this.__is_empty = false;
                     }
                 })
             }
@@ -265,9 +267,11 @@ function VeryModel(definition, args) {
                     if (!this.__defs.hasOwnProperty(key)) return;
                     if (this.__defs[key].hasOwnProperty('collection')) {
                         for (var vidx in value[key]) {
+                            this.__is_empty = false;
                             this.__data[key].push(value[key][vidx]);
                         }
                     } else {
+                        model.__is_empty = false;
                         model[key] = value[key];
                     }
                 }.bind(this));
@@ -292,12 +296,19 @@ function VeryModel(definition, args) {
                     key = this.__reverse_map[field];
                 }
                 if (this.__defs[field].hasOwnProperty('model')) {
-                    obj[key] = this.__data[field].toObject();
+                    if (!this.__data[field].__is_empty) {
+                        obj[key] = this.__data[field].toObject();
+                    }
                 } else if (this.__defs[field].hasOwnProperty('collection')) {
                     obj[key] = [];
                     this.__data[field].forEach(function (inst) {
-                        obj[key].push(inst.toObject());
+                        if (!inst.__is_empty) {
+                            obj[key].push(inst.toObject());
+                        }
                     });
+                    if (obj[key].length === 0) {
+                        delete obj[key];
+                    }
                 } else {
                     obj[key] = this[field];
                     if (typeof obj[key] === 'undefined') {
@@ -340,7 +351,8 @@ function VeryModel(definition, args) {
                 //if this field is another model
                 //recursively validate it
                 //add errors to our own
-                if (this.__defs[field].hasOwnProperty('model') && this.__data.hasOwnProperty(field)) {
+                //only if the submodule is required or has been populated
+                if (this.__defs[field].hasOwnProperty('model') && this.__data.hasOwnProperty(field) && (!this.__data[field].__is_empty || this.__defs[field].required)) {
                     merrors = this.__data[field].doValidate();
                     for (var eidx in merrors) {
                         merrors[eidx] = field + '.' + merrors[eidx];
@@ -353,13 +365,16 @@ function VeryModel(definition, args) {
                     var arrayerrors = [];
                     var idx = 0;
                     this.__data[field].forEach( function (model) {
-                        merrors = model.doValidate();
-                        for (var eidx in merrors) {
-                            merrors[eidx] = field + '[' + idx + '].' + merrors[eidx];
+                        //is this collection required? has the model been populated?
+                        if (this.__defs[field].required || !model.__is_empty) {
+                            merrors = model.doValidate();
+                            for (var eidx in merrors) {
+                                merrors[eidx] = field + '[' + idx + '].' + merrors[eidx];
+                            }
+                            errors = errors.concat(merrors);
                         }
-                        errors = errors.concat(merrors);
                         idx += 1;
-                    });
+                    }.bind(this));
                 //if we have a VeryType to validate against, validate it
                 } else if (this.__data.hasOwnProperty(field) && this.__defs[field].hasOwnProperty('type')) {
                     if (typeof this.__defs[field].type === 'string' && Types.hasOwnProperty(this.__defs[field].type)) {
