@@ -95,8 +95,8 @@ module.exports = {
         var list = List.create([1, 'hi']);
         var errors = list.doValidate();
         test.ok(errors.length === 0);
-        test.ok(Array.isArray(list.__data));
-        test.ok(list.__data.length === 3);
+        test.ok(Array.isArray(list.__verymeta.data));
+        test.ok(list.__verymeta.data.length === 3);
         test.ok(list.arg3 === list[2]);
         test.ok(Array.isArray(list.toObject()));
         test.ok(!Array.isArray(list.toObject({useKeywords: true})));
