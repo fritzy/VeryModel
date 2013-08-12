@@ -1,6 +1,6 @@
 var veryimport = require('../index');
 var VeryModel = veryimport.VeryModel;
-var VeryType = veryimport.VeryType;
+var VeryType = veryimport.VeryValidator;
 
 var generaldef;
 var MajorGeneral;
@@ -15,13 +15,15 @@ module.exports = {
                     first: {required: false, type: VeryType().isAlpha().len(2, 25)},
                     last: {required: false, type: VeryType().isAlpha().len(3, 25)},
                     title: {depends: {last: true}},
-                    full: {derive: function (name) {
-                        return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
+                    full: {
+                        derive: function (name) {
+                            return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
                         }
                     }
                 }
             },
-            knowledge: {collection: {
+            knowledge: {
+                collection: {
                     name: {required: true},
                     category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
                 }
@@ -89,7 +91,7 @@ module.exports = {
             {required: true, type: VeryType().isInt(), keyword: 'arg1'},
             {keyword: 'arg2', default: 'crap'},
             {type: VeryType().isAlpha(), keyword: 'arg3'},
-        ], {array_length:7});
+        ], {array_length: 7});
         var list = List.create([1, 'hi']);
         var errors = list.doValidate();
         test.ok(errors.length === 0);
@@ -97,7 +99,7 @@ module.exports = {
         test.ok(list.__data.length === 3);
         test.ok(list.arg3 === list[2]);
         test.ok(Array.isArray(list.toObject()));
-        test.ok(!Array.isArray(list.toObject({useKeywords:true})));
+        test.ok(!Array.isArray(list.toObject({useKeywords: true})));
         test.done();
     },
     'String Types': function (test) {
@@ -114,7 +116,7 @@ module.exports = {
         var Model = new VeryModel({
             test: {required: true}
         });
-        Model.setSave(function(model, cb) {
+        Model.setSave(function (model, cb) {
             test.ok(model.test === 'cheese');
             test.done();
         });
@@ -126,7 +128,7 @@ module.exports = {
             test: {required: true}
         });
         Model.setLoad(function (id, cb) {
-            cb(false, this.create({test:id}));
+            cb(false, this.create({test: id}));
         });
         Model.load('35', function (err, model) {
             test.ok(model.test === '35');
@@ -144,10 +146,10 @@ module.exports = {
         test.ok(!userobj.hasOwnProperty('password'));
         userobj = user.toObject({withPrivate: true});
         test.ok(userobj.hasOwnProperty('password'));
-        test.done()
+        test.done();
     },
     'Validate Arguments': function (test) {
-        doItArgs = new VeryModel([
+        var doItArgs = new VeryModel([
             {required: true, keyword: 'msg'},
             {required: false, keyword: 'save', default: false},
             {required: true, keyword: 'cb'}
@@ -156,10 +158,10 @@ module.exports = {
         function doIt() {
             var args = doItArgs.create(arguments);
             var errors = args.doValidate();
-            args.cb(errors, args.msg, args.save)
+            args.cb(errors, args.msg, args.save);
         }
 
-        doIt('hi there', function(err, msg, save) {
+        doIt('hi there', function (err, msg, save) {
             test.ok(msg === 'hi there', "msg matches");
             test.ok(save === false, "save is fasle");
             test.ok(err.length === 0), "no errors";
