@@ -177,5 +177,17 @@ module.exports = {
         });
         test.done();
     },
+    'Inheritance': function (test) {
+        var Parent = new VeryModel({foo: {type: 'date'}, bar: {type: 'string'}});
+        var Child = new VeryModel({bar: {type: 'number'}});
+        Child.inherit(Parent);
+
+        var obj = Child.create({foo: '2008-02-10', bar: 123});
+        test.ok(obj.bar === 123);
+        test.ok(obj.foo === '2008-02-10');
+        var errs = obj.doValidate();
+        test.ok(errs.length === 0);
+        test.done();
+    }
 };
 
