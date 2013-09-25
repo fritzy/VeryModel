@@ -31,20 +31,22 @@ var User = new VeryModel({
     passhash: {private: true},
 });
 
-User.setSave(function(model, cb) {
-    if (model.password) {
-        model.passhash = sha1(model.password + 'static salt');
-        model.password = undefined;
+User.extendModel({
+    doSave: function(cb) {
+        if (this.password) {
+            this.passhash = sha1(this.password + 'static salt');
+            this.password = undefined;
+        }
+        riak.put(this.id, model.toJSON({withPrivate: true}), cb);
+    },
+    doLoad: function(id, cb) {
+        riak.get(id, function (err, data) {
+            var model = this.create(data);
+            cb(err, model);
+        });
     }
-    riak.put(model.id, model.toJSON({withPrivate: true}), cb);
 });
 
-User.setLoad(function(id, cb) {
-    riak.get(id, function (err, data) {
-        var model = this.create(data);
-        cb(err, model);
-    });
-});
 
 this.post = function (req, res) {
     var user = User.create(req.body);

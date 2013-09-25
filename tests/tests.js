@@ -112,29 +112,6 @@ module.exports = {
         test.ok(errs.length === 0);
         test.done();
     },
-    'Save': function (test) {
-        var Model = new VeryModel({
-            test: {required: true}
-        });
-        Model.setSave(function (model, cb) {
-            test.ok(model.test === 'cheese');
-            test.done();
-        });
-        var model = Model.create({test: 'cheese'});
-        model.doSave();
-    },
-    'Load': function (test) {
-        var Model = new VeryModel({
-            test: {required: true}
-        });
-        Model.setLoad(function (id, cb) {
-            cb(false, this.create({test: id}));
-        });
-        Model.load('35', function (err, model) {
-            test.ok(model.test === '35');
-            test.done();
-        });
-    },
     'Private': function (test) {
         var User = new VeryModel({
             username: {},
