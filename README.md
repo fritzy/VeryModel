@@ -31,6 +31,7 @@ var User = new VeryModel({
     passhash: {private: true},
 });
 
+//create some model controller functions to interact with the database
 User.extendModel({
     doSave: function(cb) {
         if (this.password) {
