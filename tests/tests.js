@@ -2,6 +2,18 @@ var veryimport = require('../index');
 var VeryModel = veryimport.VeryModel;
 var VeryType = veryimport.VeryValidator;
 
+var fakePassingValidator = {
+    validate: function () {
+        return true;
+    }
+};
+
+var fakeFailingValidator = {
+    validate: function () {
+        return false;
+    }
+};
+
 var generaldef;
 var MajorGeneral;
 var model;
@@ -55,6 +67,20 @@ module.exports = {
         var TestModel = new VeryModel({atest: VeryType().isInt()});
         var m = TestModel.create();
         test.ok(m.hasOwnProperty('__verymeta')); // ugly but __verymeta is a property verymodel adds to objects
+        test.done();
+    },
+    'Boolean passing validators work': function (test) {
+        var TestModel = new VeryModel({ passTest: { type: fakePassingValidator } });
+        var m = TestModel.create({ passTest: 1 });
+        var errors = m.doValidate();
+        test.ok(errors.length === 0);
+        test.done();
+    },
+    'Boolean failing validators work': function (test) {
+        var TestModel = new VeryModel({ failTest: { type: fakeFailingValidator } });
+        var m = TestModel.create({ failTest: 1 });
+        var errors = m.doValidate();
+        test.ok(errors.length === 1);
         test.done();
     },
     'Load model data': function (test) {
