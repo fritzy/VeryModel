@@ -47,14 +47,20 @@ module.exports = {
         done();
     },
     'Define a VeryModel': function (test) {
+        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        test.ok(TestModel instanceof VeryModel);
         test.done();
     },
     'Create a Model': function (test) {
-
+        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        var m = TestModel.create();
+        test.ok(m.hasOwnProperty('__verymeta')); // ugly but __verymeta is a property verymodel adds to objects
         test.done();
     },
     'Load model data': function (test) {
-        //done in setup
+        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        var m = TestModel.create({atest: 4});
+        test.ok(m.toObject().atest === 4);
         test.done();
     },
     'Should fail': function (test) {
@@ -72,6 +78,10 @@ module.exports = {
         test.ok(model.knowledge[1].category == 'vegetable');
         var errors = model.doValidate();
         test.ok(errors.length === 0);
+        test.done();
+    },
+    'Derived fields are populated': function (test) {
+        test.ok(model.toObject().name.full == 'Major-General Stanley');
         test.done();
     },
     'Arrays Validate': function (test) {
