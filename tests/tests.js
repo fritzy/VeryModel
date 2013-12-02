@@ -32,6 +32,16 @@ module.exports = {
                 required: true,
                 type: VeryType().isIn(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
                 default: 'Major-General'
+            },
+            birthday: {
+                required: false,
+                type: VeryType().isDate(),
+                processIn: function (value) {
+                    return value.toISOString();
+                },
+                processOut: function (value) {
+                    return new Date(value);
+                }
             }
         };
         MajorGeneral = new VeryModel(generaldef);
@@ -39,7 +49,8 @@ module.exports = {
         model.loadData({
             name: {title: 'Major-General', last: 'Stanley'},
             rank: 'Major-General',
-            knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}]
+            knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}],
+            birthday: new Date('1965-12-02T00:00:00.000Z')
         });
         done();
     },
@@ -72,6 +83,15 @@ module.exports = {
         test.ok(model.knowledge[1].category == 'vegetable');
         var errors = model.doValidate();
         test.ok(errors.length === 0);
+        test.done();
+    },
+    'ProcessIn and processOut': function (test) {
+        test.ok(typeof model.__verymeta.data.birthday === 'string');
+        test.ok(model.__verymeta.data.birthday === '1965-12-02T00:00:00.000Z');
+        test.ok(typeof model.toObject().birthday === 'object');
+        test.ok(model.toObject().birthday.getUTCMonth() === 11); // months are 0 indexed
+        test.ok(model.toObject().birthday.getUTCDate() === 2);
+        test.ok(model.toObject().birthday.getUTCFullYear() === 1965);
         test.done();
     },
     'Arrays Validate': function (test) {
