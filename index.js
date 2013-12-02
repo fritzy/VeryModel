@@ -6,3 +6,6 @@ exports.VeryCollection = require('./lib/collection');
 exports.VeryValidator = function () {
     return new VeryValidator();
 };
+exports.VeryType = function () {
+    return new VeryValidator();
+};
