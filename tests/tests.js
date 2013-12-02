@@ -2,6 +2,18 @@ var veryimport = require('../index');
 var VeryModel = veryimport.VeryModel;
 var VeryType = veryimport.VeryValidator;
 
+var fakePassingValidator = {
+    validate: function () {
+        return true;
+    }
+};
+
+var fakeFailingValidator = {
+    validate: function () {
+        return false;
+    }
+};
+
 var generaldef;
 var MajorGeneral;
 var model;
@@ -58,14 +70,34 @@ module.exports = {
         done();
     },
     'Define a VeryModel': function (test) {
+        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        test.ok(TestModel instanceof VeryModel);
         test.done();
     },
     'Create a Model': function (test) {
-
+        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        var m = TestModel.create();
+        test.ok(m.hasOwnProperty('__verymeta')); // ugly but __verymeta is a property verymodel adds to objects
+        test.done();
+    },
+    'Boolean passing validators work': function (test) {
+        var TestModel = new VeryModel({ passTest: { type: fakePassingValidator } });
+        var m = TestModel.create({ passTest: 1 });
+        var errors = m.doValidate();
+        test.ok(errors.length === 0);
+        test.done();
+    },
+    'Boolean failing validators work': function (test) {
+        var TestModel = new VeryModel({ failTest: { type: fakeFailingValidator } });
+        var m = TestModel.create({ failTest: 1 });
+        var errors = m.doValidate();
+        test.ok(errors.length === 1);
         test.done();
     },
     'Load model data': function (test) {
-        //done in setup
+        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        var m = TestModel.create({atest: 4});
+        test.ok(m.toObject().atest === 4);
         test.done();
     },
     'Should fail': function (test) {
@@ -92,6 +124,10 @@ module.exports = {
         test.ok(model.toObject().birthday.getUTCMonth() === 11); // months are 0 indexed
         test.ok(model.toObject().birthday.getUTCDate() === 2);
         test.ok(model.toObject().birthday.getUTCFullYear() === 1965);
+        test.done();
+    },
+    'Derived fields are populated': function (test) {
+        test.ok(model.toObject().name.full == 'Major-General Stanley');
         test.done();
     },
     'Arrays Validate': function (test) {
