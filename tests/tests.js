@@ -49,10 +49,10 @@ module.exports = {
                 required: false,
                 type: VeryType().isDate(),
                 processIn: function (value) {
-                    return value.toISOString();
+                    return new Date(value);
                 },
                 processOut: function (value) {
-                    return new Date(value);
+                    return value.toISOString();
                 }
             }
         };
@@ -62,8 +62,8 @@ module.exports = {
             name: {title: 'Major-General', last: 'Stanley'},
             rank: 'Major-General',
             knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}],
-            birthday: new Date('1965-12-02T00:00:00.000Z')
-        });
+            birthday: '1965-12-02T00:00:00.000Z'
+        }, true);
         done();
     },
     tearDown: function (done) {
@@ -118,12 +118,9 @@ module.exports = {
         test.done();
     },
     'ProcessIn and processOut': function (test) {
-        test.ok(typeof model.__verymeta.data.birthday === 'string');
-        test.ok(model.__verymeta.data.birthday === '1965-12-02T00:00:00.000Z');
-        test.ok(typeof model.toObject().birthday === 'object');
-        test.ok(model.toObject().birthday.getUTCMonth() === 11); // months are 0 indexed
-        test.ok(model.toObject().birthday.getUTCDate() === 2);
-        test.ok(model.toObject().birthday.getUTCFullYear() === 1965);
+        test.ok(model.__verymeta.data.birthday instanceof Date);
+        test.ok(model.birthday instanceof Date);
+        test.ok(typeof model.toObject().birthday === 'string');
         test.done();
     },
     'Derived fields are populated': function (test) {
