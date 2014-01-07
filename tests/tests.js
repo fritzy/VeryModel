@@ -57,13 +57,12 @@ module.exports = {
             }
         };
         MajorGeneral = new VeryModel(generaldef);
-        model = MajorGeneral.create();
-        model.loadData({
+        model = MajorGeneral.create({
             name: {title: 'Major-General', last: 'Stanley'},
             rank: 'Major-General',
             knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}],
             birthday: '1965-12-02T00:00:00.000Z'
-        }, true);
+        });
         done();
     },
     tearDown: function (done) {
@@ -193,7 +192,7 @@ module.exports = {
 
         doIt('hi there', function (err, msg, save) {
             test.ok(msg === 'hi there', "msg matches");
-            test.ok(save === false, "save is fasle");
+            test.ok(save === false, "save is false");
             test.ok(err.length === 0), "no errors";
             test.done();
         });
@@ -217,6 +216,30 @@ module.exports = {
         test.ok(obj.foo === '2008-02-10');
         var errs = obj.doValidate();
         test.ok(errs.length === 0);
+        test.done();
+    },
+
+    'Sub-models do not transform data when set directly' : function (test) {
+        var ThingDef = {
+            sub: {
+                model: new VeryModel({
+                    created: {
+                        type: VeryType().isDate(),
+                        processIn: function (val) { return new Date(val); },
+                        processOut: function (val) { return (val && val.toISOString) ? val.toISOString() : val; }
+                    }
+                })
+            }
+        };
+        var Thing = new VeryModel(ThingDef);
+
+        var sub = {created: '2007-01-01T12:00:00'};
+        var thing = Thing.create({sub: sub});
+        test.ok(thing.sub.created instanceof Date);
+
+        thing.sub = sub;
+        test.ok(!(thing.sub.created instanceof Date));
+        test.ok(thing.sub.created === sub.created);
         test.done();
     }
 };
