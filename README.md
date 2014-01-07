@@ -123,8 +123,9 @@ Model defintions are recursive Javascript object. At each layer, you can have th
 * `derive` `function`): Derive the value of this field with this function whenever field is accessed
     `{derive: function(model) {return model.first + ' ' + model.last}`
 * `depends` ({some_other_field: VeryType or true}, ...): Require other fields when this field is set, optionally run VeryType chain check on other field.
-* `primary` (boolean): Set this on one of your fiels for easy saving and loading.
-* `private` (boolean): `toObject()` will not include this field in expect unless the argumnet usePrivate is true
+* `private` (boolean): `toObject()` will not include this field in expect unless the argument withPrivate is true
+* `processIn` (function): value will be transformed on set via the `processIn` function
+* `processOut` (function): value will be transformed on set via the `processOut` function when `toObject()` is called
 
 #### Example Definition
 
