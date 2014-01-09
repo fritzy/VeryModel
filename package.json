@@ -8,7 +8,7 @@
   },
   "description": "A full model system without the framework",
   "dependencies": {
-      "validator": "*",
+      "validator": "~2.1.0",
       "underscore": "*"
   },
   "devDependencies": {
