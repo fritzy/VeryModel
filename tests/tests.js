@@ -96,7 +96,7 @@ module.exports = {
     'Load model data': function (test) {
         var TestModel = new VeryModel({atest: VeryType().isInt()});
         var m = TestModel.create({atest: 4});
-        test.ok(m.toObject().atest === 4);
+        test.ok(m.toJSON().atest === 4);
         test.done();
     },
     'Should fail': function (test) {
@@ -106,7 +106,7 @@ module.exports = {
     },
     'Edit a VeryModel': function (test) {
         model.rank = 'Private';
-        test.ok(model.toObject().rank === 'Private');
+        test.ok(model.toJSON().rank === 'Private');
         test.done();
     },
     'Validate passes': function (test) {
@@ -119,11 +119,11 @@ module.exports = {
     'ProcessIn and processOut': function (test) {
         test.ok(model.__verymeta.data.birthday instanceof Date);
         test.ok(model.birthday instanceof Date);
-        test.ok(typeof model.toObject().birthday === 'string');
+        test.ok(typeof model.toJSON().birthday === 'string');
         test.done();
     },
     'Derived fields are populated': function (test) {
-        test.ok(model.toObject().name.full == 'Major-General Stanley');
+        test.ok(model.toJSON().name.full == 'Major-General Stanley');
         test.done();
     },
     'Arrays Validate': function (test) {
@@ -150,8 +150,8 @@ module.exports = {
         test.ok(Array.isArray(list.__verymeta.data));
         test.ok(list.__verymeta.data.length === 3);
         test.ok(list.arg3 === list[2]);
-        test.ok(Array.isArray(list.toObject()));
-        test.ok(!Array.isArray(list.toObject({useKeywords: true})));
+        test.ok(Array.isArray(list.toJSON()));
+        test.ok(!Array.isArray(list.toJSON({useKeywords: true})));
         test.done();
     },
     'String Types': function (test) {
@@ -171,9 +171,9 @@ module.exports = {
         });
         var user = User.create({username: 'Bill', password: 'bill is pretty awesome'});
         test.ok(user.password === 'bill is pretty awesome');
-        var userobj = user.toObject();
+        var userobj = user.toJSON();
         test.ok(!userobj.hasOwnProperty('password'));
-        userobj = user.toObject({withPrivate: true});
+        userobj = user.toJSON({withPrivate: true});
         test.ok(userobj.hasOwnProperty('password'));
         test.done();
     },
