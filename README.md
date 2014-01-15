@@ -8,76 +8,162 @@ VeryModel is not tied to a framework, and it implements a full purpose Model sys
 
 ## OK, But What Is It?
 
-Models are useful for managing the lifecycle of an object.  
+Models are useful for managing the lifecycle of an object.
 They are commonly used for framework ORMs (Object Relational Managers) and the M in MVC (Model-View-Controller) patterns like Backbone.js.
 
-### Load Network Data, Giving Proper Errors, Save It
+Models can also be extended with functionality for interacting with databases and network/HTTP APIs, making them little SDKs
+specific to each type of data you deal with.
 
-Pretend we're working in Node.js Express,  
-using VeryModel as an ORM to save, load, and validate models.
+## Quick Example
 
-```javascript 
-function goodPassword(password) {
-    //test for password being strong
-    //would go here
-    return true;
-}
 
-//Create a User Factory
-var User = new VeryModel({
-    id: {primary: true, type: VeryType().isAlphanumeric(), default: 1},
-    username: {required: true, type: VeryType().isAlphanumeric().len(4, 25), default: ''},
-    password: {required: false, type: VeryType().len(6).custom(goodPassword)}, default: ''},
-    passhash: {private: true},
-});
+## Definitions, Model Factory, Model Instances
 
-//create some model controller functions to interact with the database
-User.extendModel({
-    doSave: function(cb) {
-        if (this.password) {
-            this.passhash = sha1(this.password + 'static salt');
-            this.password = undefined;
+verymodel.VeryModel is a constructor (must be called with new) that takes a definition (object of fields and parameters).  
+
+    var verymodel = require('verymodel');
+    
+    // setup your factory
+    var SomeModelFactory = new verymodel.VeryModel({
+        //definition here
+        some_field: {
+            // field parameters (see Definition Spec below)
+        },
+        some_other_field: {
+            // field parameters (see Definition Spec blow)
+        },
+    }); 
+    
+    // create an instance of a model
+    var model_instance = SomeModelFactory.create({
+        //initial model data here
+    }); 
+
+The resulting object is a [factory](http://en.wikipedia.org/wiki/Factory_%28software_concept%29) that produces model instances based on the defintion with the `.create(values)` method.
+
+Model instances are working instances of your object data. They use property setters/getters to interface with your data, and are **not** simple JSON style objects.
+
+## Adding functionality
+
+Both Model Factories and Model Instances can be extended to add parameters and functions, typically used for database interactions like `load` and `save()` or HTTP REST calls like `list()`, `get()`, `post()`, `put()`, `delete()`.
+
+Functions that load data should be added onto the Factory like load, list, getByName, etc.
+
+    //these functions can be named anything, do anything, and have any parameters.
+    //extending the factory with new functions is useful for dealing with the model BEFORE it contains any data (like loading/getting)
+    SomeModelFactory.load = function (id, callback) { //most IO in Node.js is async, so here's an callback example
+        db.get(id, function (err, result) {
+            callback(err, this.create(result));
+        });
+    }
+
+    SomeModelFactory.list = function (offset, count, callback) {
+        db.select("SELECT * FROM SomeTable LIMIT %d %d", offset, count, function (err, results) {
+            var model_instances = [];
+            if (!err) {
+                results.
+            }
+        });
+    }
+
+Functions that you want to use on Model Instances like save, delete is extended with `extendModel`.
+
+    SomeModelFactory.extendModel({
+        save: function (callback) {
+            db.set(this.key, this.toJSON(), callback);
+        },
+        delete: function (callback) {
+            db.del(this.key, callback);
         }
-        riak.put(this.id, model.toJSON({withPrivate: true}), cb);
-    },
-    doLoad: function(id, cb) {
-        riak.get(id, function (err, data) {
-            var model = this.create(data);
-            cb(err, model);
-        });
-    }
-});
+    });
 
 
-this.post = function (req, res) {
-    var user = User.create(req.body);
-    var errors = user.doValidate();
-    if (errors.length > 0) {
-        res.send(400, errors.join('\n'));
-    } else {
-        var uid = uuid();
-        user.id = uid;
-        user.doSave(function() {
-            res.send(201, user.toObject());
-        });
-    }
-};
-```
+## Definition Spec
+
+Model defintions are recursive Javascript object. At each layer, you can have the following fields:
+
+* `required` (boolean): Error on validation if this field isn't set.
+* `type` (VeryType): VeryType chain to validate field against if set.
+* `default` (any): Default value set automatically.
+* `model` (definition object or VeryModel): set this field as another model.
+* `collection` (definition object or VeryModel): set this field as a collection of a model.
+* `derive` `function`): Derive the value of this field with this function whenever field is accessed
+    `{derive: function(model) {return model.first + ' ' + model.last}`
+* `depends` ({some_other_field: VeryType or true}, ...): Require other fields when this field is set, optionally run VeryType chain check on other field.
+* `private` (boolean): `toObject()` will not include this field in expect unless the argument withPrivate is true
+* `processIn` (function): value will be transformed on set via the `processIn` function
+* `processOut` (function): value will be transformed on set via the `processOut` function when `toObject()` is called
+
+**Node: context (`this`) on all function calls are the model instance, in order to give you access within your functions**
+
+## VeryType
+
+VeryType is a wrapper on [node-validator](https://raw2.github.com/chriso/node-validator/),
+the only change being that we can define a validation seperately from using it.
+
+    var verymodel = require('verymodel')
+    var SomeFactory = new verymodel.VeryModel({
+        some_field: {
+            type: new VeryType().isEmail().isLength(5, 40),
+            required: true,
+            default: 'example@example.com'
+        }
+    });
+
+Here are all of the node-validator functions (lifted from their README).
+
+**NOTE: the first str value must be omitted when used with the VeryType wrapper**
+
+- **equals(str, comparison)** - check if the string matches the comparison.
+- **contains(str, seed)** - check if the string contains the seed.
+- **matches(str, pattern [, modifiers])** - check if string matches the pattern. Either `matches('foo', /foo/i)` or `matches('foo', 'foo', 'i')`.
+- **isEmail(str)** - check if the string is an email.
+- **isURL(str)** - check if the string is an URL.
+- **isIP(str [, version])** - check if the string is an IP (version 4 or 6).
+- **isAlpha(str)** - check if the string contains only letters (a-zA-Z).
+- **isNumeric(str)** - check if the string contains only numbers.
+- **isAlphanumeric(str)** - check if the string contains only letters and numbers.
+- **isHexadecimal(str)** - check if the string is a hexadecimal number.
+- **isHexColor(str)** - check if the string is a hexadecimal color.
+- **isLowercase(str)** - check if the string is lowercase.
+- **isUppercase(str)** - check if the string is uppercase.
+- **isInt(str)** - check if the string is an integer.
+- **isFloat(str)** - check if the string is a float.
+- **isDivisibleBy(str, number)** - check if the string is a number that's divisible by another.
+- **isNull(str)** - check if the string is null.
+- **isLength(str, min [, max])** - check if the string's length falls in a range.
+- **isUUID(str [, version])** - check if the string is a UUID (version 3, 4 or 5).
+- **isDate(str)** - check if the string is a date.
+- **isAfter(str [, date])** - check if the string is a date that's after the specified date (defaults to now).
+- **isBefore(str [, date])** - check if the string is a date that's before the specified date.
+- **isIn(str, values)** - check if the string is in a array of allowed values.
+- **isCreditCard(str)** - check if the string is a credit card.
+- **isISBN(str [, version])** - check if the string is an ISBN (version 10 or 13).
+
+### Using Model Instances
+
+Models can be treated like normal objects. Each field has a getter/setter.
+
+    somemodelinstance.defined_field = 'hello';
+
+Models also refer to their `__parent`
 
 
-### Create a fresh object with default values.
+`loadData(data)`
 
-We can also create empty/default objects to work with as a starting point.
+Rather than setting fields individually, set them en masse with an object.
 
-```javascript
-this.new = function (req, res) {
-    res.send(200, User.create().toObject());
-};
-```
+`toJSON()`
 
-Which would send
+Export an object with no getters, setters, state, etc... just the object with derived fields.
 
-    {id: 1, username: '', password: ''}
+`doValidate()`
+
+returns an array of error strings.
+
+## \_\_verymeta
+
+Model instances have access to a variable, `this.__verymeta.model`, which is the Model Factory used to make this Model Instance.
 
 ### Validate and Name Function Arguments
 
@@ -107,27 +193,7 @@ doIt('hi there', function(err, type, msg, save) {
 
 `npm install verymodel`
 
-## API
-
-### VeryType
-
-### Definition
-
-Model defintions are recursive Javascript object. At each layer, you can have the following fields:
-
-* `required` (boolean): Error on validation if this field isn't set.
-* `type` (VeryType): VeryType chain to validate field against if set.
-* `default` (any): Default value set automatically.
-* `model` (definition object or VeryModel): set this field as another model.
-* `collection` (definition object or VeryModel): set this field as a collection of a model.
-* `derive` `function`): Derive the value of this field with this function whenever field is accessed
-    `{derive: function(model) {return model.first + ' ' + model.last}`
-* `depends` ({some_other_field: VeryType or true}, ...): Require other fields when this field is set, optionally run VeryType chain check on other field.
-* `private` (boolean): `toObject()` will not include this field in expect unless the argument withPrivate is true
-* `processIn` (function): value will be transformed on set via the `processIn` function
-* `processOut` (function): value will be transformed on set via the `processOut` function when `toObject()` is called
-
-#### Example Definition
+#### Extended Example Definition
 
     var generaldef = {
         name: {
@@ -154,29 +220,8 @@ Model defintions are recursive Javascript object. At each layer, you can have th
         }
     };
 
-### Models
 
-Models can be treated like normal objects. Each field has a getter/setter.
-Models also refer to their `__parent`
-
-`loadData(data)`
-
-Rather than setting fields individually, set them en masse with an object.
-
-`toObject()`
-
-Export an object with no getters, setters, state, etc... just the object with derived fields.
-
-`doValidate()`
-
-returns an array of error strings.
-
-`toJSON()`
-
-helper for `JSON.stringify(model.toObject());`
-
-
-### VeryModel
+### Extended Example Usage
 
 This class interprets defintions and spawns models from `create`.
 
