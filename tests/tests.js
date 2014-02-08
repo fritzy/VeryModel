@@ -241,6 +241,19 @@ module.exports = {
         test.ok(!(thing.sub.created instanceof Date));
         test.ok(thing.sub.created === sub.created);
         test.done();
-    }
+    },
+
+    'All keys should be processed even if there are unexpected keys': function (test) {
+        var Thing = new VeryModel({
+            a: {processIn: function (a) { return a + '!'; }},
+            b: {processIn: function (a) { return a + '!'; }},
+            c: {processIn: function (a) { return a + '!'; }},
+        });
+        var thing = Thing.create({'crap': 'hi', 'a': 'no', 'b': 'why', 'c': 'hah', 'e': 'hklj'});
+        test.ok(thing.a === 'no!');
+        test.ok(thing.b === 'why!');
+        test.ok(thing.c === 'hah!');
+        test.done();
+    },
 };
 
