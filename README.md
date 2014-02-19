@@ -161,6 +161,29 @@ Export an object with no getters, setters, state, etc... just the object with de
 
 returns an array of error strings.
 
+`getOldModel()`
+
+Returns a new model instance as Factory.create(this.toJSON()) using the data from the original create call.
+
+`getChanges()`
+
+Returns an object of changed fields from create with 'then' and 'now' values.
+    
+    {
+        field1: {then: 'cheese', now: 'ham'},
+        field2: {then: 'whoever', now: 'whomever'}
+    }
+
+`diff(othermodelinstance)`
+
+Returns an object of different fields with 'left' and 'right' values.
+    
+    {
+        field1: {left: 'cheese', right: 'ham'},
+        field2: {left: 'whoever', right: 'whomever'}
+    }
+
+
 ## \_\_verymeta
 
 Model instances have access to a variable, `this.__verymeta.model`, which is the Model Factory used to make this Model Instance.
