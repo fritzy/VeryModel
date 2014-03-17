@@ -93,6 +93,7 @@ Model defintions are recursive Javascript object. At each layer, you can have th
 * `private` (boolean): `toObject()` will not include this field in expect unless the argument withPrivate is true
 * `processIn` (function): value will be transformed on set via the `processIn` function
 * `processOut` (function): value will be transformed on set via the `processOut` function when `toObject()` is called
+* `onSet` (function): similar to processIn, but not run during the create() process, only when a value is directly assigned.
 
 **Node: context (`this`) on all function calls are the model instance, in order to give you access within your functions**
 
@@ -182,6 +183,10 @@ Returns an object of different fields with 'left' and 'right' values.
         field1: {left: 'cheese', right: 'ham'},
         field2: {left: 'whoever', right: 'whomever'}
     }
+
+`isSet(field)`
+
+Returns boolean if the field is not undefined. Useful in processIn and derived functions to prevent recursion.
 
 
 ## \_\_verymeta

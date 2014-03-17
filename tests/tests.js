@@ -255,5 +255,39 @@ module.exports = {
         test.ok(thing.c === 'hah!');
         test.done();
     },
+
+    'onSet': function (test) {
+        var Thing = new VeryModel({
+            a: { onSet: function (a) {
+                    return 'bye';
+                }
+            }
+        });
+        var thing = Thing.create({a: 'hi'});
+        test.equals(thing.a, 'hi');
+        thing.a = 'weeee';
+        test.equals(thing.a, 'bye');
+        test.done();
+    },
+
+    'isSet': function (test) {
+        var Thing = new VeryModel({
+            a: { 
+                derive: function (a) {
+                    if (!this.isSet('a')) {
+                        return 'ham';
+                    } else {
+                        return 'cheese';
+                    }
+                }
+            }
+        });
+        var thing = Thing.create({});
+        test.equals(thing.a, 'ham');
+        thing.a = 'what';
+        test.equals(thing.a, 'cheese');
+        test.done();
+    },
+
 };
 
