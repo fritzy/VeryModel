@@ -9,7 +9,7 @@
   "description": "A full model system without the framework",
   "dependencies": {
     "validator": "~2.1.0",
-    "underscore": "*"
+    "underscore": "^1.6.0"
   },
   "devDependencies": {
     "nodeunit": "0.8.1",

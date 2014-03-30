@@ -288,6 +288,25 @@ module.exports = {
         test.equals(thing.a, 'cheese');
         test.done();
     },
-
+    "Enum type": function (test) {
+        var Thing = new VeryModel({
+            field: {type: 'enum', values: ['yes', 'no', 'maybe']},
+        });
+        var t = Thing.create({field: 'yes'});
+        test.equals(t.doValidate().length, 0);
+        t.field = 'ham';
+        test.equals(t.doValidate().length, 1);
+        test.done();
+    },
+    "Integer type": function (test) {
+        var Thing = new VeryModel({
+            field: {type: 'integer'},
+        });
+        var t = Thing.create({field: '23'});
+        test.equals(t.doValidate().length, 0);
+        t.field = 'ham';
+        test.equals(t.doValidate().length, 1);
+        test.done();
+    },
 };
 
