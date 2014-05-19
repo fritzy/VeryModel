@@ -1,4 +1,5 @@
 var VeryValidator = require('./lib/validator');
+var definition = require('./lib/definition');
 
 
 exports.VeryModel = require('./lib/model');
@@ -9,3 +10,4 @@ exports.VeryValidator = function () {
 exports.VeryType = function () {
     return new VeryValidator();
 };
+exports.registerTypes = definition.registerTypes;
