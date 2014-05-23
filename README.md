@@ -84,7 +84,7 @@ Model defintions are recursive Javascript object. At each layer, you can have th
 
 * `required` (boolean): Error on validation if this field isn't set.
 * `type` (VeryType): VeryType chain to validate field against if set.
-* `default` (any): Default value set automatically.
+* `default` (any): Default value set automatically. If you use a mutable object, use a function that returns a new instance instead.
 * `model` (definition object or VeryModel): set this field as another model.
 * `collection` (definition object or VeryModel): set this field as a collection of a model.
 * `derive` `function`): Derive the value of this field with this function whenever field is accessed
