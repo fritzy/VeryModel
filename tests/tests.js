@@ -308,5 +308,16 @@ module.exports = {
         test.equals(t.doValidate().length, 1);
         test.done();
     },
+    "Appending to a list": function (test) {
+        var Thing = new VeryModel({
+            field: {type: 'array'},
+        });
+        var x = Thing.create();
+        x.field.push('a');
+        var y = Thing.create();
+        test.equals(x.field.length, 1);
+        test.equals(y.field.length, 0);
+        test.done();
+    },
 };
 
