@@ -16,284 +16,531 @@ specific to each type of data you deal with.
 
 ## Quick Example
 
-
-## Definitions, Model Factory, Model Instances
-
 verymodel.VeryModel is a constructor (must be called with new) that takes a definition (object of fields and parameters).  
 
-    var verymodel = require('verymodel');
-    
-    // setup your factory
-    var SomeModelFactory = new verymodel.VeryModel({
-        //definition here
-        some_field: {
-            // field parameters (see Definition Spec below)
-        },
-        some_other_field: {
-            // field parameters (see Definition Spec blow)
-        },
-    }); 
-    
-    // create an instance of a model
-    var model_instance = SomeModelFactory.create({
-        //initial model data here
-    }); 
+```javascript
+var verymodel = require('verymodel');
+
+// setup your factory
+var SomeModelFactory = new verymodel.VeryModel({
+    //definition here
+    some_field: {
+        // field parameters (see Definition Spec below)
+    },
+    some_other_field: {
+        // field parameters (see Definition Spec blow)
+    },
+}); 
+
+// create an instance of a model
+var model_instance = SomeModelFactory.create({
+    //initial model data here
+}); 
+```
 
 The resulting object is a [factory](http://en.wikipedia.org/wiki/Factory_%28software_concept%29) that produces model instances based on the defintion with the `.create(values)` method.
 
 Model instances are working instances of your object data. They use property setters/getters to interface with your data, and are **not** simple JSON style objects.
 
+* [Adding Functionality](#add-func)
+* [Extended Example](#ext-examp)
+* [Field Definitions](#field-def)
+    * [type](#def-type)
+    * [model](#def-model)
+    * [collection](#def-collection)
+    * [validate](#def-validate)
+    * [processIn](#def-processIn)
+    * [processOut](#def-processOut)
+    * [onSet](#def-onSet)
+    * [derive](#def-derive)
+    * [index](#def-index)
+    * [required](#def-required)
+    * [default](#def-default)
+    * [derive](#def-derive)
+    * [depends](#def-depends)
+    * [private](#def-private)
+* [Model Options](#model-options)
+    * [name](#mo-name)
+* [Model Factory Methods](#model-factory-methods)
+    * [create](#create)
+* [Model Instance Methods](#model-instance-methods)
+    * [toJSON](#toJSON)
+    * [toString](#toString)
+    * [diff](#diff)
+    * [getChanges](#getChanges)
+    * [getOldModel](#getOldModel)
+    * [loadData](#loadData)
+
+
+<a name='add-func'></a>
 ## Adding functionality
 
 Both Model Factories and Model Instances can be extended to add parameters and functions, typically used for database interactions like `load` and `save()` or HTTP REST calls like `list()`, `get()`, `post()`, `put()`, `delete()`.
 
 Functions that load data should be added onto the Factory like load, list, getByName, etc.
 
-    //these functions can be named anything, do anything, and have any parameters.
-    //extending the factory with new functions is useful for dealing with the model BEFORE it contains any data (like loading/getting)
-    SomeModelFactory.load = function (id, callback) { //most IO in Node.js is async, so here's an callback example
-        db.get(id, function (err, result) {
-            callback(err, this.create(result));
-        });
-    }
+```javascript
+//these functions can be named anything, do anything, and have any parameters.
+//extending the factory with new functions is useful for dealing with the model BEFORE it contains any data (like loading/getting)
+SomeModelFactory.load = function (id, callback) { //most IO in Node.js is async, so here's an callback example
+    db.get(id, function (err, result) {
+        callback(err, this.create(result));
+    });
+}
 
-    SomeModelFactory.list = function (offset, count, callback) {
-        db.select("SELECT * FROM SomeTable LIMIT %d %d", offset, count, function (err, results) {
-            var model_instances = [];
-            if (!err) {
-                results.
-            }
-        });
-    }
+SomeModelFactory.list = function (offset, count, callback) {
+    db.select("SELECT * FROM SomeTable LIMIT %d %d", offset, count, function (err, results) {
+        var model_instances = [];
+        if (!err) {
+            results.
+        }
+    });
+}
+```
 
 Functions that you want to use on Model Instances like save, delete is extended with `extendModel`.
 
-    SomeModelFactory.extendModel({
-        save: function (callback) {
-            db.set(this.key, this.toJSON(), callback);
-        },
-        delete: function (callback) {
-            db.del(this.key, callback);
-        }
-    });
-
-
-## Definition Spec
-
-Model defintions are recursive Javascript object. At each layer, you can have the following fields:
-
-* `required` (boolean): Error on validation if this field isn't set.
-* `type` (VeryType): VeryType chain to validate field against if set.
-* `default` (any): Default value set automatically. If you use a mutable object, use a function that returns a new instance instead.
-* `model` (definition object or VeryModel): set this field as another model.
-* `collection` (definition object or VeryModel): set this field as a collection of a model.
-* `derive` `function`): Derive the value of this field with this function whenever field is accessed
-    `{derive: function(model) {return model.first + ' ' + model.last}`
-* `depends` ({some_other_field: VeryType or true}, ...): Require other fields when this field is set, optionally run VeryType chain check on other field.
-* `private` (boolean): `toObject()` will not include this field in expect unless the argument withPrivate is true
-* `processIn` (function): value will be transformed on set via the `processIn` function
-* `processOut` (function): value will be transformed on set via the `processOut` function when `toObject()` is called
-* `onSet` (function): similar to processIn, but not run during the create() process, only when a value is directly assigned.
-
-**Node: context (`this`) on all function calls are the model instance, in order to give you access within your functions**
-
-## VeryType
-
-VeryType is a wrapper on [node-validator](https://raw2.github.com/chriso/node-validator/),
-the only change being that we can define a validation seperately from using it.
-
-    var verymodel = require('verymodel')
-    var SomeFactory = new verymodel.VeryModel({
-        some_field: {
-            type: new VeryType().isEmail().isLength(5, 40),
-            required: true,
-            default: 'example@example.com'
-        }
-    });
-
-Here are all of the node-validator functions (lifted from their README).
-
-**NOTE: the first str value must be omitted when used with the VeryType wrapper**
-
-- **equals(str, comparison)** - check if the string matches the comparison.
-- **contains(str, seed)** - check if the string contains the seed.
-- **matches(str, pattern [, modifiers])** - check if string matches the pattern. Either `matches('foo', /foo/i)` or `matches('foo', 'foo', 'i')`.
-- **isEmail(str)** - check if the string is an email.
-- **isURL(str)** - check if the string is an URL.
-- **isIP(str [, version])** - check if the string is an IP (version 4 or 6).
-- **isAlpha(str)** - check if the string contains only letters (a-zA-Z).
-- **isNumeric(str)** - check if the string contains only numbers.
-- **isAlphanumeric(str)** - check if the string contains only letters and numbers.
-- **isHexadecimal(str)** - check if the string is a hexadecimal number.
-- **isHexColor(str)** - check if the string is a hexadecimal color.
-- **isLowercase(str)** - check if the string is lowercase.
-- **isUppercase(str)** - check if the string is uppercase.
-- **isInt(str)** - check if the string is an integer.
-- **isFloat(str)** - check if the string is a float.
-- **isDivisibleBy(str, number)** - check if the string is a number that's divisible by another.
-- **isNull(str)** - check if the string is null.
-- **isLength(str, min [, max])** - check if the string's length falls in a range.
-- **isUUID(str [, version])** - check if the string is a UUID (version 3, 4 or 5).
-- **isDate(str)** - check if the string is a date.
-- **isAfter(str [, date])** - check if the string is a date that's after the specified date (defaults to now).
-- **isBefore(str [, date])** - check if the string is a date that's before the specified date.
-- **isIn(str, values)** - check if the string is in a array of allowed values.
-- **isCreditCard(str)** - check if the string is a credit card.
-- **isISBN(str [, version])** - check if the string is an ISBN (version 10 or 13).
-
-### Using Model Instances
-
-Models can be treated like normal objects. Each field has a getter/setter.
-
-    somemodelinstance.defined_field = 'hello';
-
-Models also refer to their `__parent`
-
-
-`loadData(data)`
-
-Rather than setting fields individually, set them en masse with an object.
-
-`toJSON()`
-
-Export an object with no getters, setters, state, etc... just the object with derived fields.
-
-`doValidate()`
-
-returns an array of error strings.
-
-`getOldModel()`
-
-Returns a new model instance as Factory.create(this.toJSON()) using the data from the original create call.
-
-`getChanges()`
-
-Returns an object of changed fields from create with 'then' and 'now' values.
-    
-    {
-        field1: {then: 'cheese', now: 'ham'},
-        field2: {then: 'whoever', now: 'whomever'}
-    }
-
-`diff(othermodelinstance)`
-
-Returns an object of different fields with 'left' and 'right' values.
-    
-    {
-        field1: {left: 'cheese', right: 'ham'},
-        field2: {left: 'whoever', right: 'whomever'}
-    }
-
-`isSet(field)`
-
-Returns boolean if the field is not undefined. Useful in processIn and derived functions to prevent recursion.
-
-
-## \_\_verymeta
-
-Model instances have access to a variable, `this.__verymeta.model`, which is the Model Factory used to make this Model Instance.
-
-### Validate and Name Function Arguments
-
-Model definitions can be objects or arrays.  
-Using an array definition, we can use VeryModel help manage function arguments (mapping, optional arguments, and validation).
-    
 ```javascript
-doItArgs = new VeryModel([
-    {required: true, keyword: 'msg'},
-    {required: true, type: VeryType().isIn('small', 'big', 'huge'), default: 'small'},
-    {required: false, keyword: 'save', default: false, type: 'boolean'},
-    {required: true, keyword: 'cb', type: 'function'}
-]);
-
-function doIt() {
-    var args = doItArgs.create(arguments);
-    var errors = args.doValidate();
-    args.cb(errors, args.type, args.msg, args.save);
-}
-
-doIt('hi there', function(err, type, msg, save) {
-    console.log("Made it!");
+SomeModelFactory.extendModel({
+    save: function (callback) {
+        db.set(this.key, this.toJSON(), callback);
+    },
+    delete: function (callback) {
+        db.del(this.key, callback);
+    }
 });
 ```
 
-## Install
+<a name='ext-examp'></a>
+## Extended Example
 
-`npm install verymodel`
-
-#### Extended Example Definition
-
-    var generaldef = {
-        name: {
-            required: true,
-            model: {
-                first: {required: false, type: VeryType().isAlpha().len(2, 25)},
-                last: {required: false, type: VeryType().isAlpha().len(3, 25)},
-                title: {depends: {last: true},
-                full: {derive: function (name) {
-                    return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
-                    }
+```javascript
+var generaldef = {
+    name: {
+        required: true,
+        model: {
+            first: {required: false, type: VeryType().isAlpha().len(2, 25)},
+            last: {required: false, type: VeryType().isAlpha().len(3, 25)},
+            title: {depends: {last: true},
+            full: {derive: function (name) {
+                return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
                 }
             }
-        },
-        knowledge: {collection: {
-                name: {required: true},
-                category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
-            }
-        },
-        rank: {
-            required: true,
-            type: VeryType().isIn(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
-            default: 'Major-General'
         }
-    };
-
-
-### Extended Example Usage
+    },
+    knowledge: {collection: {
+            name: {required: true},
+            category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
+        }
+    },
+    rank: {
+        required: true,
+        type: VeryType().isIn(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
+        default: 'Major-General'
+    }
+};
+```
 
 This class interprets defintions and spawns models from `create`.
 
 Initialize with a definition.
 
-    var MajorGeneral = new VeryModel(generaldef);
-    var stanley = MajorGeneral.create({
-        name: {title: 'Major-General', last: 'Stanley'},
-        rank: 'Major-General',
-        knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}]
-    });
-    var errors = stanley.doValidate();
-    console.log(errors);
-
+```javascript
+var MajorGeneral = new verymodel.Model(generaldef);
+var stanley = MajorGeneral.create({
+    name: {title: 'Major-General', last: 'Stanley'},
+    rank: 'Major-General',
+    knowledge: [{name: 'animalculous', category: 'animal'}, {name: 'calculus', category: 'mathmatical'}]
+});
+var errors = stanley.doValidate();
+console.log(errors);
+```
 Output:
 
-    [ 'knowledge[1].category: Unexpected value or invalid argument' ]
+```javascript
+[ 'knowledge[1].category: Unexpected value or invalid argument' ]
+```
 
 Turns out he knows more than just animals, vegetables, minerals.
 
-    stanley.knowledge[1].category = 'vegetable';
+```javascript
+stanley.knowledge[1].category = 'vegetable';
+```
 
 That ought to do it.
     
-    var errors = stanley.doValidate();
-    console.log(errors);
+```javascript
+var errors = stanley.doValidate();
+console.log(errors);
+```
 
 Output:
 
-    []
+```javascript
+[]
+```
 
 Let's see what our object looks like:
 
-    console.log(stanley.toObject());
+```javascript
+console.log(stanley.toJSON());
+```
 
 Output:
 
-    { name:
-       { last: 'Stanley',
-         title: 'Major-General',
-         full: 'Major-General Stanley' },
-      knowledge:
-       [ { name: 'animalculous', category: 'animal' },
-         { name: 'calculus', category: 'vegetable' } ],
-      rank: 'Major-General' }
+```javascript
+{ name:
+   { last: 'Stanley',
+     title: 'Major-General',
+     full: 'Major-General Stanley' },
+  knowledge:
+   [ { name: 'animalculous', category: 'animal' },
+     { name: 'calculus', category: 'vegetable' } ],
+  rank: 'Major-General' }
+```
 
 Noticed that the derived field, `name.full` was populated.
+
+<a name='field-def'></a>
+
+##Field Definitions
+
+* [type](#def-type)
+* [model](#def-model)
+* [collection](#def-collection)
+* [validate](#def-validate)
+* [processIn](#def-processIn)
+* [processOut](#def-processOut)
+* [onSet](#def-onSet)
+* [derive](#def-derive)
+* [index](#def-index)
+* [required](#def-required)
+* [default](#def-default)
+* [derive](#def-derive)
+* [depends](#def-depends)
+* [private](#def-private)
+
+<a name='def-type'></a>
+__type__
+
+A string which references a built in type.
+Built in types include `string`, `array`, `integer`, `numeric`, `enum`, `boolean`.
+Strings and arrays may have `min` and `max` values, both for validation, and max will truncate the results when saving or on `toJSON`.
+Enums may include `values`, an array (and eventually a ECMAScript 6 set).
+
+You can override any of the definition fields of a specified type. Validate, processIn, processOut, and onSet will use both the built-in and your override. The others will replace the definition field.
+
+`type` does not need to be set at all. In fact, `{}` is a perfectly valid definition.
+
+Example:
+
+```javascript
+{field: {type: 'string', max: 140}}
+```
+----
+
+<a name='def-model'></a>
+__model__
+
+The model parameter defines a submodel. It can be an object of field definitions, a `VeryModel` Factory Instance, or the string matching the name of a VeryModel factory described in it's options.
+
+<a name='def-collection'></a>
+__collection__
+
+Like sub [models](#def-model), collections may be a string name of a model, model factory, or model definition object in order to define an array of models.
+
+<a name='def-validate'></a>
+__validate__
+
+The `validate` field takes a value and should determine whether that value is acceptable or not. It's run during `doValidate()` or during `save` if you set the option `validateOnSave: true`.
+The function should return a boolean, an array of errors, an empty array, or an error string.
+
+Example:
+
+```js
+new verymodel.Model({field: {
+    validate: function (value) {
+        //validate on even
+        return (value % 2 === 0);
+    }
+});
+```
+
+----
+
+<a name='def-processIn'></a>
+__processIn__
+
+`processIn` is a function that is passed a value on loading from the database, `create`, or `loadData`. It should return a value.
+
+This function is often paired with `processOut` in order to make an interactive object when in model form, and a serialized form when saved.
+
+`processIn` does not handle the case of direct assignment like `modelinst.field = 'cheese';`. Use `onSet` for this case.
+
+Example:
+
+```javascript
+new verymodel.Model({someDateField: {
+    processIn: function (value) {
+        return moment(value);
+    },
+})
+```
+
+----
+
+<a name='def-processOut'></a>
+__processOut__
+
+`processOut` is a function that takes a value and returns a value, just like `processIn`, but is typically used to serialize the value for storage. It runs on `save()` and `toJSON()`.
+
+Example:
+
+```javascript
+new verymodel.Model({someDateField: {
+    processOut: function (value) {
+        return value.format(); //turn moment into string
+    },
+})
+```
+
+----
+
+<a name='def-onSet'></a>
+__onSet__
+
+`onSet` is just like `processIn`, except that it only runs on direct assignment. It's a function that takes a value and returns a value.
+
+Example:
+
+```javascript
+new verymodel.Model({someDateField: {
+    processIn: function (value) {
+        return moment(value);
+    },
+    onSet: function (value) {
+        if (moment.isMoment(value)) {
+            return value;
+        } else {
+            return moment(value);
+        }
+    },
+    processOut: function (value) {
+        return value.format();
+    },
+})
+```
+
+----
+
+<a name='def-derive'></a>
+__derive__
+
+`derive` is a function that returns a value whenever the field is accessed (which can be quite frequent). The `this` context, is the current model instance, so you can access other fields.
+
+Example:
+
+```js
+new verymodel.Model({
+    firstName: {type: 'string'},
+    lastName: {type: 'string'},
+    fullName: {
+        type: 'string',
+        derive: function () {
+            return [this.firstName, this.lastName].join(" ");
+        },
+    }
+});
+```
+:heavy\_exclamation\_mark: Warning! DO NOT REFERENCE THE DERIVE FIELD WITHIN ITS DERIVE FUNCTION! You will cause an infinite recursion. This is bad and will crash your program.
+
+----
+
+<a name='def-required'></a>
+__required__
+
+`required` is a boolean, false by default.
+A required field will attempt to bring in the `default` value if a value is not present.
+
+Example:
+
+```js
+new verymodel.Model({
+    comment: {
+        type: 'string',
+        required: true,
+        default: "User has nothing to say."
+    },
+    author: {foreignKey: 'user'},
+    starredBy: {foreignCollection: 'user'}
+});
+```
+
+----
+
+<a name='def-default'></a>
+__default__
+
+`default` may be a value or a function. Default is only brought into play when a field is `required` but not assigned.
+In function form, `default` behaves similarly to `derive`, except that it only executes once.
+
+```js
+new verymodel.Model({
+    comment: {
+        type: 'string',
+        required: true,
+        default: function () {
+            return this.author.fullName + ' has nothing to say.';
+        },
+    },
+    author: {foreignKey: 'user'},
+    starredBy: {foreignCollection: 'user'}
+});
+```
+
+:heavy\_exclamation\_mark: Warning! Assigning mutable objects as a default can result in the default getting changed over time.
+When assigning objects, arrays, or essentially any advanced type, set default to a function that returns a new instance of the object.
+
+---
+
+<a name='def-private'></a>
+__private__
+
+`private` is a boolean, false by default, which determines whether a field is included in the object resulting from [toJSON()](#toJSON).
+
+<a name='model-factory-methods'></a>
+## Model Factory Methods
+
+* [create](#create)
+
+<a name="create"></a>
+__create(value_object)__
+
+Returns a factory instance model.
+
+Create makes a new instance of the model with specific data.
+Any fields in the `value_object` that were not defined get thrown out.
+Validations are not done on creation, but some values may be processed based on the field definition type and `processIn` functions.
+
+Logging the model out to console will produce a confusing result.
+If you want the model's data, run `.toJSON()` and use the result.
+
+Example:
+
+```js
+//assuming Person is a defined Model Factory
+var person = Person.create({
+    firstName: 'Nathan',
+    lastName: 'Fritz',
+});
+```
+
+## Model Instance Methods
+
+* [toJSON](#toJSON)
+* [toString](#toString)
+* [diff](#diff)
+* [getChanges](#getChanges)
+* [getOldModel](#getOldModel)
+* [loadData](#loadData)
+
+---
+
+<a name="toJSON"></a>
+__toJSON(flags)__
+
+Outputs a JSON style object from the model.
+
+Boolean Flags:
+
+* noDepth: false by default. If true, does not recursively toJSON objects like [model](#def-model)s and [collection](#def-collection)s.
+* withPrivate: false by default. If true, includes fields with [private](#def-private) set to true.
+
+Example:
+
+You want an example? Look at all of the other examples... most of them use [toJSON](#toJSON).
+
+
+:point\_up: [toJSON](#toJSON) does not produce a string, but an object. See: [toString](#toString).
+
+----
+
+<a name="toString"></a>
+__toString()__
+
+Just like [toJSON](#toJSON), but produces a JSON string rather than an object.
+
+----
+
+<a name="diff"></a>
+__diff(other)__
+
+Arguments:
+
+* other: model instance to compare this one to.
+
+Result: object of each field with left, and right values.
+
+```js
+{
+    firstName: {left: 'Nathan', right: 'Sam'},
+    lastName: {left: 'Fritz', right: 'Fritz'},
+}
+```
+
+
+----
+
+<a name="getChanges"></a>
+__getChanges()__
+
+Get the changes since [create](#create).
+
+Result: object of each field with then, now, and changed boolean.
+
+```js
+{
+    body: {then: "I dont liek cheese.", now: "I don't like cheese.", changed: true},
+    updated: {then: '2014-02-10 11:11:11', now: '2014-02-10 12:12:12', changed: true},
+    created: {then: '2014-02-10 11:11:11', now: '2014-02-10 11:11:11', changed: false},
+}
+```
+
+----
+
+<a name="getOldModel"></a>
+__getOldModel()__
+
+Get a new model instance of this instance with all of the changes since [create](#create) reversed.
+
+Result: Model instance.
+
+----
+
+<a name="loadData"></a>
+__loadData()__
+
+Loads data just like when a model instance is retrieved or [create](#create)d.
+
+[processIn](#def-processIn) is called on any fields specified, but [onSet](#def-onSet) is not.
+
+Essentially the same things happen as when running [create](#create) but can be done after the model instance is initialized.
+
+Example:
+
+```javascript
+var person = Person.create({
+    firstName: 'Nathan',
+    lastName: 'Fritz',
+});
+
+person.favoriteColor = 'blue';
+
+person.loadData({
+    favoriteColor: 'green',
+    favoriteFood: 'burrito',
+});
+
+console.log(person.toJSON());
+// {firstName: 'Nathan', lastName: 'Fritz', favoriteFood: 'burrito', favoriteColor: 'green'}
+``

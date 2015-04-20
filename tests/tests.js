@@ -140,9 +140,9 @@ module.exports = {
     },
     'Model Arrays': function (test) {
         var List = new VeryModel([
-            {required: true, type: VeryType().isInt(), keyword: 'arg1'},
-            {keyword: 'arg2', default: 'crap'},
-            {type: VeryType().isAlpha(), keyword: 'arg3'},
+            {required: true, type: VeryType().isInt(), alias: 'arg1'},
+            {alias: 'arg2', default: 'crap'},
+            {type: VeryType().isAlpha(), alias: 'arg3'},
         ], {array_length: 7});
         var list = List.create([1, 'hi']);
         var errors = list.doValidate();
@@ -151,7 +151,7 @@ module.exports = {
         test.ok(list.__verymeta.data.length === 3);
         test.ok(list.arg3 === list[2]);
         test.ok(Array.isArray(list.toJSON()));
-        test.ok(!Array.isArray(list.toJSON({useKeywords: true})));
+        test.ok(!Array.isArray(list.toJSON({useAliases: true})));
         test.done();
     },
     'String Types': function (test) {
@@ -179,9 +179,9 @@ module.exports = {
     },
     'Validate Arguments': function (test) {
         var doItArgs = new VeryModel([
-            {required: true, keyword: 'msg'},
-            {required: false, keyword: 'save', default: false},
-            {required: true, keyword: 'cb'}
+            {required: true, alias: 'msg'},
+            {required: false, alias: 'save', default: false},
+            {required: true, alias: 'cb'}
         ]);
 
         function doIt() {
