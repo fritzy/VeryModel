@@ -1,6 +1,6 @@
 var veryimport = require('../index');
 var VeryModel = veryimport.VeryModel;
-var VeryType = veryimport.VeryValidator;
+var joi = require('joi');
 
 var fakePassingValidator = {
     validate: function () {
@@ -24,8 +24,8 @@ module.exports = {
             name: {
                 required: true,
                 model: {
-                    first: {required: false, type: VeryType().isAlpha().len(2, 25)},
-                    last: {required: false, type: VeryType().isAlpha().len(3, 25)},
+                    first: {required: false, validate: joi.string().alphanum().min(2).max(25)},
+                    last: {required: false, validate: joi.string().alphanum().min(3).max(25)},
                     title: {depends: {last: true}},
                     full: {
                         derive: function (name) {
@@ -37,17 +37,17 @@ module.exports = {
             knowledge: {
                 collection: {
                     name: {required: true},
-                    category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
+                    category: {required: true, validate: joi.any().valid(['vegetable', 'animal', 'mineral'])}
                 }
             },
             rank: {
                 required: true,
-                type: VeryType().isIn(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
+                validate: joi.any().valid(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
                 default: 'Major-General'
             },
             birthday: {
                 required: false,
-                type: VeryType().isDate(),
+                validate: joi.date(),
                 processIn: function (value) {
                     return new Date(value);
                 },
@@ -69,32 +69,32 @@ module.exports = {
         done();
     },
     'Define a VeryModel': function (test) {
-        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        var TestModel = new VeryModel({atest: {validate: joi.number().integer()}});
         test.ok(TestModel instanceof VeryModel);
         test.done();
     },
     'Create a Model': function (test) {
-        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        var TestModel = new VeryModel({atest: {validate: joi.number().integer()}});
         var m = TestModel.create();
         test.ok(m.hasOwnProperty('__verymeta')); // ugly but __verymeta is a property verymodel adds to objects
         test.done();
     },
     'Boolean passing validators work': function (test) {
-        var TestModel = new VeryModel({ passTest: { type: fakePassingValidator } });
+        var TestModel = new VeryModel({ passTest: { validate: fakePassingValidator } });
         var m = TestModel.create({ passTest: 1 });
         var errors = m.doValidate();
         test.ok(errors.length === 0);
         test.done();
     },
     'Boolean failing validators work': function (test) {
-        var TestModel = new VeryModel({ failTest: { type: fakeFailingValidator } });
+        var TestModel = new VeryModel({ failTest: { validate: fakeFailingValidator } });
         var m = TestModel.create({ failTest: 1 });
         var errors = m.doValidate();
         test.ok(errors.length === 1);
         test.done();
     },
     'Load model data': function (test) {
-        var TestModel = new VeryModel({atest: VeryType().isInt()});
+        var TestModel = new VeryModel({atest: {validate: joi.number().integer()}});
         var m = TestModel.create({atest: 4});
         test.ok(m.toJSON().atest === 4);
         test.done();
@@ -127,22 +127,22 @@ module.exports = {
         test.done();
     },
     'Arrays Validate': function (test) {
-        var Args = new VeryModel({atest: {array: [VeryType().isInt(), VeryType().isAlpha()]}});
+        var Args = new VeryModel({atest: {array: [joi.number().integer(), joi.string().alphanum()]}});
         var m = Args.create({atest: [1, 'Cheese']});
         test.ok(m.doValidate().length === 0);
         test.done();
     },
     'Arrays Fail to Validate': function (test) {
-        var Args = new VeryModel({atest: {array: [VeryType().isInt(), VeryType().isAlpha()]}});
+        var Args = new VeryModel({atest: {array: [joi.number().integer(), joi.string().regex(/^[a-z]+$/i)]}});
         var m = Args.create({atest: [1, 'Cheese1']});
         test.ok(m.doValidate().length === 1);
         test.done();
     },
     'Model Arrays': function (test) {
         var List = new VeryModel([
-            {required: true, type: VeryType().isInt(), alias: 'arg1'},
+            {required: true, validate: joi.number().integer(), alias: 'arg1'},
             {alias: 'arg2', default: 'crap'},
-            {type: VeryType().isAlpha(), alias: 'arg3'},
+            {validate: joi.string().alphanum(), alias: 'arg3'},
         ], {array_length: 7});
         var list = List.create([1, 'hi']);
         var errors = list.doValidate();
@@ -224,7 +224,7 @@ module.exports = {
             sub: {
                 model: new VeryModel({
                     created: {
-                        type: VeryType().isDate(),
+                        validate: joi.date(),
                         processIn: function (val) { return new Date(val); },
                         processOut: function (val) { return (val && val.toISOString) ? val.toISOString() : val; }
                     }

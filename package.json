@@ -8,8 +8,9 @@
   },
   "description": "A full model system without the framework",
   "dependencies": {
-    "validator": "~2.1.0",
-    "underscore": "^1.6.0"
+    "underscore": "^1.6.0",
+    "joi": "^6.2.0",
+    "lodash": "^3.7.0"
   },
   "devDependencies": {
     "nodeunit": "0.8.1",

@@ -16,13 +16,13 @@ specific to each type of data you deal with.
 
 ## Quick Example
 
-verymodel.VeryModel is a constructor (must be called with new) that takes a definition (object of fields and parameters).  
+verymodel.Model is a constructor (must be called with new) that takes a definition (object of fields and parameters).  
 
 ```javascript
 var verymodel = require('verymodel');
 
 // setup your factory
-var SomeModelFactory = new verymodel.VeryModel({
+var SomeModelFactory = new verymodel.Model({
     //definition here
     some_field: {
         // field parameters (see Definition Spec below)
@@ -119,8 +119,8 @@ var generaldef = {
     name: {
         required: true,
         model: {
-            first: {required: false, type: VeryType().isAlpha().len(2, 25)},
-            last: {required: false, type: VeryType().isAlpha().len(3, 25)},
+            first: {required: false, validator: joi.string().alphanum().min(2).max(25)},
+            last: {required: false, validator: joi.string().alphanum().min(3).max(25)},
             title: {depends: {last: true},
             full: {derive: function (name) {
                 return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
@@ -130,12 +130,12 @@ var generaldef = {
     },
     knowledge: {collection: {
             name: {required: true},
-            category: {required: true, type: VeryType().isIn(['vegetable', 'animal', 'mineral'])}
+            category: {required: true, validate: joi.any().valid(['vegetable', 'animal', 'mineral'])}
         }
     },
     rank: {
         required: true,
-        type: VeryType().isIn(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
+        validate: joi.any().valid(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
         default: 'Major-General'
     }
 };
@@ -252,8 +252,8 @@ Like sub [models](#def-model), collections may be a string name of a model, mode
 <a name='def-validate'></a>
 __validate__
 
-The `validate` field takes a value and should determine whether that value is acceptable or not. It's run during `doValidate()` or during `save` if you set the option `validateOnSave: true`.
-The function should return a boolean, an array of errors, an empty array, or an error string.
+The `validate` field takes a value and should determine whether that value is acceptable or not. It's run during `doValidate()`.
+The function should return a boolean, an array of errors, an empty array, or an error string, or a joi validation object.
 
 Example:
 
@@ -273,7 +273,7 @@ __processIn__
 
 `processIn` is a function that is passed a value on loading from the database, `create`, or `loadData`. It should return a value.
 
-This function is often paired with `processOut` in order to make an interactive object when in model form, and a serialized form when saved.
+This function is often paired with `processOut` in order to make an interactive object when in model form, and a serialized form when converted.
 
 `processIn` does not handle the case of direct assignment like `modelinst.field = 'cheese';`. Use `onSet` for this case.
 
@@ -292,7 +292,7 @@ new verymodel.Model({someDateField: {
 <a name='def-processOut'></a>
 __processOut__
 
-`processOut` is a function that takes a value and returns a value, just like `processIn`, but is typically used to serialize the value for storage. It runs on `save()` and `toJSON()`.
+`processOut` is a function that takes a value and returns a value, just like `processIn`, but is typically used to serialize the value for storage. It runs on `toJSON()`.
 
 Example:
 
