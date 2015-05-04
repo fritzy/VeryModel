@@ -1,6 +1,6 @@
 {
   "name": "verymodel",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "homepage": "https://github.com/fritzy/VeryModel",
   "repository": {
     "type": "git",
@@ -8,12 +8,12 @@
   },
   "description": "A full model system without the framework",
   "dependencies": {
-    "lodash": "^3.7.0"
+    "lodash": "^3.7.0",
+    "joi": "^6.2.0"
   },
   "devDependencies": {
     "nodeunit": "0.8.1",
-    "precommit-hook": "0.3.5",
-    "joi": "^6.2.0"
+    "precommit-hook": "0.3.5"
   },
   "scripts": {
     "test": "node_modules/nodeunit/bin/nodeunit tests/tests.js"
