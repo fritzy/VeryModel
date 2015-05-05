@@ -218,7 +218,33 @@ module.exports = {
         test.ok(errs.length === 0);
         test.done();
     },
-
+    'joi exporting': function (test) {
+        var Thing = new VeryModel({
+            a: {validate: joi.number().integer()},
+            b: {validate: joi.string().alphanum()},
+            c: {validate: joi.string().guid()}
+        });
+        var val = Thing.exportJoi();
+        var error = val.validate({
+            a: 13,
+            b: 'laksjdf34',
+            c: '0e4c27ce-023c-490b-a3b9-1d0afed7125a'
+        });
+        test.ok(error.error === null);
+        var val2 = Thing.exportJoi(['a', 'c']);
+        error = val2.validate({
+            a: 234,
+            c: '0e4c27ce-023c-490b-a3b9-1d0afed7125a'
+        });
+        test.ok(error.error === null);
+        error = val2.validate({
+            a: 234,
+            b: 'lkjasdf23',
+            c: '0e4c27ce-023c-490b-a3b9-1d0afed7125a'
+        });
+        test.ok(error.error !== null);
+        test.done();
+    },
     'Sub-models do not transform data when set directly' : function (test) {
         var ThingDef = {
             sub: {

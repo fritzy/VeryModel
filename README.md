@@ -63,6 +63,7 @@ Model instances are working instances of your object data. They use property set
     * [name](#mo-name)
 * [Model Factory Methods](#model-factory-methods)
     * [create](#create)
+    * [exportJoi](#exportJoi)
 * [Model Instance Methods](#model-instance-methods)
     * [toJSON](#toJSON)
     * [toString](#toString)
@@ -412,6 +413,7 @@ __private__
 ## Model Factory Methods
 
 * [create](#create)
+* [exportJoi](#exportJoi)
 
 <a name="create"></a>
 __create(value_object)__
@@ -434,6 +436,16 @@ var person = Person.create({
     lastName: 'Fritz',
 });
 ```
+
+<a name="exportJoi"></a>
+__exportJoi(fields)__
+
+Returns a Joi.object() of all of the field definitions that include joi validators.
+Useful for using in hapi validators and validating without a model instance.
+
+Arguments:
+
+ * fields - An optional array of fields to include.
 
 ## Model Instance Methods
 
