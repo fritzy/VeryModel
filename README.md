@@ -445,7 +445,7 @@ Useful for using in hapi validators and validating without a model instance.
 
 Arguments:
 
- * fields - An optional array of fields to include.
+ * fields - An optional array of fields to include, or an object with a root property of fields, and other properties of submodel fields
 
 ## Model Instance Methods
 
