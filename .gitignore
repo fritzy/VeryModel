@@ -11,5 +11,8 @@ pids
 logs
 results
 
+.*.swp
+.*.swo
+
 npm-debug.log
 node_modules

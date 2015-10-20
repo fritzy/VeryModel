@@ -2,18 +2,6 @@ var veryimport = require('../index');
 var VeryModel = veryimport.VeryModel;
 var joi = require('joi');
 
-var fakePassingValidator = {
-    validate: function () {
-        return true;
-    }
-};
-
-var fakeFailingValidator = {
-    validate: function () {
-        return false;
-    }
-};
-
 var generaldef;
 var MajorGeneral;
 var model;
@@ -22,31 +10,29 @@ module.exports = {
     setUp: function (done) {
         generaldef = {
             name: {
-                required: true,
                 model: {
-                    first: {required: false, validate: joi.string().alphanum().min(2).max(25)},
-                    last: {required: false, validate: joi.string().alphanum().min(3).max(25)},
-                    title: {depends: {last: true}},
+                    first: {validate: joi.string().alphanum().min(2).max(25)},
+                    last: {validate: joi.string().alphanum().min(3).max(25)},
+                    title: {depends: ['last'], validate: joi.string()},
                     full: {
                         derive: function (name) {
                             return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
-                        }
+                        },
+                        validate: joi.string()
                     }
                 }
             },
             knowledge: {
                 collection: {
-                    name: {required: true},
-                    category: {required: true, validate: joi.any().valid(['vegetable', 'animal', 'mineral'])}
+                    name: {validate: joi.string().required()},
+                    category: {validate: joi.any().valid(['vegetable', 'animal', 'mineral']).required()}
                 }
             },
             rank: {
-                required: true,
-                validate: joi.any().valid(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
+                validate: joi.any().valid(['Private', 'Corpral', 'Major', 'General', 'Major-General']).required(),
                 default: 'Major-General'
             },
             birthday: {
-                required: false,
                 validate: joi.date(),
                 processIn: function (value) {
                     return new Date(value);
@@ -80,17 +66,17 @@ module.exports = {
         test.done();
     },
     'Boolean passing validators work': function (test) {
-        var TestModel = new VeryModel({ passTest: { validate: fakePassingValidator } });
+        var TestModel = new VeryModel({ passTest: { validate: joi.number() } });
         var m = TestModel.create({ passTest: 1 });
         var errors = m.doValidate();
-        test.ok(errors.length === 0);
+        test.ok(errors.error === null);
         test.done();
     },
     'Boolean failing validators work': function (test) {
-        var TestModel = new VeryModel({ failTest: { validate: fakeFailingValidator } });
-        var m = TestModel.create({ failTest: 1 });
+        var TestModel = new VeryModel({ failTest: { validate: joi.number() } });
+        var m = TestModel.create({ failTest: 'hey' });
         var errors = m.doValidate();
-        test.ok(errors.length === 1);
+        test.ok(errors.error.name === 'ValidationError');
         test.done();
     },
     'Load model data': function (test) {
@@ -101,7 +87,7 @@ module.exports = {
     },
     'Should fail': function (test) {
         var errors = model.doValidate();
-        test.ok(errors.length === 1);
+        test.ok(errors.error.name === 'ValidationError');
         test.done();
     },
     'Edit a VeryModel': function (test) {
@@ -113,7 +99,7 @@ module.exports = {
         model.knowledge[1].category = 'vegetable';
         test.ok(model.knowledge[1].category == 'vegetable');
         var errors = model.doValidate();
-        test.ok(errors.length === 0);
+        test.ok(errors.error === null);
         test.done();
     },
     'ProcessIn and processOut': function (test) {
@@ -127,26 +113,27 @@ module.exports = {
         test.done();
     },
     'Arrays Validate': function (test) {
-        var Args = new VeryModel({atest: {array: [joi.number().integer(), joi.string().alphanum()]}});
+        var Args = new VeryModel({atest: {validate: joi.array().items(joi.number().integer(), joi.string().alphanum())}});
         var m = Args.create({atest: [1, 'Cheese']});
-        test.ok(m.doValidate().length === 0);
+        var error = m.doValidate();
+        test.ok(error.error === null);
         test.done();
     },
     'Arrays Fail to Validate': function (test) {
-        var Args = new VeryModel({atest: {array: [joi.number().integer(), joi.string().regex(/^[a-z]+$/i)]}});
+        var Args = new VeryModel({atest: {validate: joi.array().items(joi.string().alphanum())}});
         var m = Args.create({atest: [1, 'Cheese1']});
-        test.ok(m.doValidate().length === 1);
+        test.ok(m.doValidate().error.name === 'ValidationError');
         test.done();
     },
     'Model Arrays': function (test) {
         var List = new VeryModel([
-            {required: true, validate: joi.number().integer(), alias: 'arg1'},
-            {alias: 'arg2', default: 'crap'},
+            {validate: joi.number().integer(), alias: 'arg1'},
+            {alias: 'arg2', validate: joi.string(), default: 'crap'},
             {validate: joi.string().alphanum(), alias: 'arg3'},
         ], {array_length: 7});
-        var list = List.create([1, 'hi']);
+        var list = List.create([1, 'crap', 'hi']);
         var errors = list.doValidate();
-        test.ok(errors.length === 0);
+        test.ok(errors.error === null);
         test.ok(Array.isArray(list.__verymeta.data));
         test.ok(list.__verymeta.data.length === 3);
         test.ok(list.arg3 === list[2]);
@@ -158,10 +145,10 @@ module.exports = {
         var StringTypeTest = new VeryModel({somed: {type: 'date'}, somee: {type: 'email'}});
         var stt = StringTypeTest.create({somed: '2008-02-10', somee: 'nadsf'});
         var errs = stt.doValidate();
-        test.ok(errs.length === 1);
+        test.ok(errs.error.details.length === 1);
         stt.somee = 'nathan@andyet.com';
         errs = stt.doValidate();
-        test.ok(errs.length === 0);
+        test.ok(errs.error === null);
         test.done();
     },
     'Private': function (test) {
@@ -176,26 +163,6 @@ module.exports = {
         userobj = user.toJSON({withPrivate: true});
         test.ok(userobj.hasOwnProperty('password'));
         test.done();
-    },
-    'Validate Arguments': function (test) {
-        var doItArgs = new VeryModel([
-            {required: true, alias: 'msg'},
-            {required: false, alias: 'save', default: false},
-            {required: true, alias: 'cb'}
-        ]);
-
-        function doIt() {
-            var args = doItArgs.create(arguments);
-            var errors = args.doValidate();
-            args.cb(errors, args.msg, args.save);
-        }
-
-        doIt('hi there', function (err, msg, save) {
-            test.ok(msg === 'hi there', "msg matches");
-            test.ok(save === false, "save is false");
-            test.ok(err.length === 0), "no errors";
-            test.done();
-        });
     },
     'Static Fields': function (test) {
         var Thing = new VeryModel({thinger: {static: true}});
@@ -215,7 +182,7 @@ module.exports = {
         test.ok(obj.bar === 123);
         test.ok(obj.foo === '2008-02-10');
         var errs = obj.doValidate();
-        test.ok(errs.length === 0);
+        test.ok(errs.error === null);
         test.done();
     },
     'joi exporting': function (test) {
@@ -231,7 +198,7 @@ module.exports = {
             c: '0e4c27ce-023c-490b-a3b9-1d0afed7125a'
         });
         test.ok(error.error === null);
-        var val2 = Thing.exportJoi(['a', 'c']);
+        var val2 = Thing.exportJoi(['a', 'c'], false);
         error = val2.validate({
             a: 234,
             c: '0e4c27ce-023c-490b-a3b9-1d0afed7125a'
@@ -327,26 +294,6 @@ module.exports = {
         test.equals(thing.a, 'ham');
         thing.a = 'what';
         test.equals(thing.a, 'cheese');
-        test.done();
-    },
-    "Enum type": function (test) {
-        var Thing = new VeryModel({
-            field: {type: 'enum', values: ['yes', 'no', 'maybe']},
-        });
-        var t = Thing.create({field: 'yes'});
-        test.equals(t.doValidate().length, 0);
-        t.field = 'ham';
-        test.equals(t.doValidate().length, 1);
-        test.done();
-    },
-    "Integer type": function (test) {
-        var Thing = new VeryModel({
-            field: {type: 'integer'},
-        });
-        var t = Thing.create({field: '23'});
-        test.equals(t.doValidate().length, 0);
-        t.field = 'ham';
-        test.equals(t.doValidate().length, 1);
         test.done();
     },
     "Appending to a list": function (test) {

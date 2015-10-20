@@ -8,7 +8,7 @@
   },
   "description": "A full model system without the framework",
   "dependencies": {
-    "joi": "^6.2.0",
+    "joi": "^6.9.1",
     "lodash": "^3.7.0"
   },
   "devDependencies": {

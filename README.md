@@ -54,7 +54,6 @@ Model instances are working instances of your object data. They use property set
     * [onSet](#def-onSet)
     * [derive](#def-derive)
     * [index](#def-index)
-    * [required](#def-required)
     * [default](#def-default)
     * [derive](#def-derive)
     * [depends](#def-depends)
@@ -118,11 +117,10 @@ SomeModelFactory.extendModel({
 ```javascript
 var generaldef = {
     name: {
-        required: true,
         model: {
-            first: {required: false, validator: joi.string().alphanum().min(2).max(25)},
-            last: {required: false, validator: joi.string().alphanum().min(3).max(25)},
-            title: {depends: {last: true},
+            first: {validator: joi.string().alphanum().min(2).max(25)},
+            last: {validator: joi.string().alphanum().min(3).max(25)},
+            title: {depends: ['last'],
             full: {derive: function (name) {
                 return (typeof name.title !== 'undefined' ? name.title + ' ' : '') + (typeof name.first !== 'undefined' ? name.first + ' ': '') + name.last;
                 }
@@ -130,12 +128,11 @@ var generaldef = {
         }
     },
     knowledge: {collection: {
-            name: {required: true},
-            category: {required: true, validate: joi.any().valid(['vegetable', 'animal', 'mineral'])}
+            name: {},
+            category: {validate: joi.any().valid(['vegetable', 'animal', 'mineral'])}
         }
     },
     rank: {
-        required: true,
         validate: joi.any().valid(['Private', 'Corpral', 'Major', 'General', 'Major-General']),
         default: 'Major-General'
     }
@@ -215,7 +212,6 @@ Noticed that the derived field, `name.full` was populated.
 * [onSet](#def-onSet)
 * [derive](#def-derive)
 * [index](#def-index)
-* [required](#def-required)
 * [default](#def-default)
 * [derive](#def-derive)
 * [depends](#def-depends)
@@ -253,18 +249,12 @@ Like sub [models](#def-model), collections may be a string name of a model, mode
 <a name='def-validate'></a>
 __validate__
 
-The `validate` field takes a value and should determine whether that value is acceptable or not. It's run during `doValidate()`.
-The function should return a boolean, an array of errors, an empty array, or an error string, or a joi validation object.
+The `validate` field takes a Joi validator and should determine whether that value is acceptable or not. It's run during `doValidate()`.
 
 Example:
 
 ```js
-new verymodel.Model({field: {
-    validate: function (value) {
-        //validate on even
-        return (value % 2 === 0);
-    }
-});
+new verymodel.Model({field: { validate: Joi.string().max(2) }});
 ```
 
 ----
@@ -357,39 +347,17 @@ new verymodel.Model({
 
 ----
 
-<a name='def-required'></a>
-__required__
-
-`required` is a boolean, false by default.
-A required field will attempt to bring in the `default` value if a value is not present.
-
-Example:
-
-```js
-new verymodel.Model({
-    comment: {
-        type: 'string',
-        required: true,
-        default: "User has nothing to say."
-    },
-    author: {foreignKey: 'user'},
-    starredBy: {foreignCollection: 'user'}
-});
-```
-
-----
 
 <a name='def-default'></a>
 __default__
 
-`default` may be a value or a function. Default is only brought into play when a field is `required` but not assigned.
+`default` may be a value or a function.
 In function form, `default` behaves similarly to `derive`, except that it only executes once.
 
 ```js
 new verymodel.Model({
     comment: {
         type: 'string',
-        required: true,
         default: function () {
             return this.author.fullName + ' has nothing to say.';
         },
