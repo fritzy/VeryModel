@@ -42,6 +42,14 @@ The resulting object is a [factory](http://en.wikipedia.org/wiki/Factory_%28soft
 
 Model instances are working instances of your object data. They use property setters/getters to interface with your data, and are **not** simple JSON style objects.
 
+## Compatibility Changes with v2
+
+The main difference between v3 and v2 is that the definition validator must now be a Joi validator.
+
+As such, "required" is no longer a necessary field, depends is now an array, and several undocumented features were removed.
+
+## Index
+
 * [Adding Functionality](#add-func)
 * [Extended Example](#ext-examp)
 * [Field Definitions](#field-def)
