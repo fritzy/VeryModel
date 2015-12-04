@@ -310,8 +310,10 @@ module.exports = {
     "UseAlias option": function (test) {
         var Thing = new VeryModel({field: {alias: 'ham'}}, {toJSONUseAliases: true});
         var thing1 = Thing.create({field: 'cheese'});
+        test.equals(thing1.ham, 'cheese');
+        thing1.ham = 'derp';
         var thingjson = thing1.toJSON();
-        test.equals(thingjson.ham, 'cheese');
+        test.equals(thingjson.ham, 'derp');
         test.equals(thingjson.hasOwnProperty('field'), false);
         test.done();
     }
