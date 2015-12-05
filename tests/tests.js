@@ -314,7 +314,12 @@ module.exports = {
         thing1.ham = 'derp';
         var thingjson = thing1.toJSON();
         test.equals(thingjson.ham, 'derp');
+        test.equals(thing1.ham, 'derp');
+        test.equals(thing1.field, 'derp');
         test.equals(thingjson.hasOwnProperty('field'), false);
+        var t2 = Thing.create({ham: 'crap'});
+        test.equals(t2.field, 'crap');
+
         test.done();
     }
 };
