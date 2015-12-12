@@ -321,6 +321,39 @@ module.exports = {
         test.equals(t2.field, 'crap');
 
         test.done();
+    },
+    "Set a deferred model": function (test) {
+        var Thing2 = new VeryModel({things: {model: 'Thing1'}, thingy: {}}, {});
+        var Thing1 = new VeryModel({name: {}}, { name: 'Thing1', cache: true});
+        var t1 = Thing1.create({name: 'Hi'});
+        var t2 = Thing2.create({thingy: 'why'});
+        t2.things = t1;
+        var t2j = t2.toJSON();
+        test.equals(t2.things.name, 'Hi');
+        test.equals(t2j.things.name, 'Hi');
+        test.done();
+    },
+    "Set a deferred collection": function (test) {
+        var Thing2 = new VeryModel({things: {collection: 'Thing1'}, thingy: {}}, {});
+        var Thing1 = new VeryModel({name: {}}, { name: 'Thing1', cache: true});
+        var t1 = Thing1.create({name: 'Hi'});
+        var t2 = Thing2.create({thingy: 'why'});
+        t2.things.push(t1);
+        var t2j = t2.toJSON();
+        test.equals(t2.things[0].name, 'Hi');
+        test.equals(t2j.things[0].name, 'Hi');
+        test.done();
+    },
+    "Assign a collection": function (test) {
+        var Thing2 = new VeryModel({things: {collection: 'Thing1'}, thingy: {}}, {});
+        var Thing1 = new VeryModel({name: {}}, { name: 'Thing1', cache: true});
+        var t1 = Thing1.create({name: 'Hi'});
+        var t2 = Thing2.create({thingy: 'why'});
+        t2.things = [t1];
+        var t2j = t2.toJSON();
+        test.equals(t2.things[0].name, 'Hi');
+        test.equals(t2j.things[0].name, 'Hi');
+        test.done();
     }
 };
 
