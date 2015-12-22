@@ -354,6 +354,17 @@ module.exports = {
         test.equals(t2.things[0].name, 'Hi');
         test.equals(t2j.things[0].name, 'Hi');
         test.done();
+    },
+    "Recursively assign a collection": function (test) {
+        var Thing2 = new VeryModel({id: {}, things: {collection: 'Thing1'}, thingy: {}}, {});
+        var Thing1 = new VeryModel({name: {}}, { name: 'Thing1', cache: true});
+        var t2 = Thing2.create({id: 1, things: [{name: 'Billy Bob'}, {name: 'Ham Sammich'}]});
+        test.equals(t2.things[0].name, 'Billy Bob');
+        test.equals(t2.things[1].name, 'Ham Sammich');
+        var t2j = t2.toJSON();
+        test.equals(t2j.things[0].name, 'Billy Bob');
+        test.equals(t2j.things[1].name, 'Ham Sammich');
+        test.done();
     }
 };
 
