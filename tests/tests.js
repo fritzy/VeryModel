@@ -383,6 +383,20 @@ module.exports = {
         var t2j = t1.toJSON({processors: ['testIn']});
         test.equals(t2j.name, 'Fritzy??');
         test.done();
+    },
+    "process flags of array": function (test) {
+        var Thing2 = new VeryModel({
+            name: {
+                processors: {
+                    testIn2: function (value) {
+                        return value.join(' ');
+                    },
+                }
+            }
+        });
+        var t1 = Thing2.create({name: ['Nathan', 'Fritz']}, {processors: ['testIn2']});
+        test.equals(t1.name, 'Nathan Fritz');
+        test.done();
     }
 };
 
