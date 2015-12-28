@@ -365,6 +365,24 @@ module.exports = {
         test.equals(t2j.things[0].name, 'Billy Bob');
         test.equals(t2j.things[1].name, 'Ham Sammich');
         test.done();
+    },
+    "process flags": function (test) {
+        var Thing1 = new VeryModel({
+            name: {
+                processors: {
+                    testIn: function (value) {
+                        return value + '?';
+                    },
+                }
+            }
+        });
+        var t1 = Thing1.create({name: 'Fritzy'}, {processFlags: ['testIn']});
+        test.equals(t1.name, 'Fritzy?');
+        var t1j = t1.toJSON();
+        test.equals(t1j.name, 'Fritzy?');
+        var t2j = t1.toJSON({processFlags: ['testIn']});
+        test.equals(t2j.name, 'Fritzy??');
+        test.done();
     }
 };
 
