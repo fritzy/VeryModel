@@ -376,11 +376,11 @@ module.exports = {
                 }
             }
         });
-        var t1 = Thing1.create({name: 'Fritzy'}, {processFlags: ['testIn']});
+        var t1 = Thing1.create({name: 'Fritzy'}, {processors: ['testIn']});
         test.equals(t1.name, 'Fritzy?');
         var t1j = t1.toJSON();
         test.equals(t1j.name, 'Fritzy?');
-        var t2j = t1.toJSON({processFlags: ['testIn']});
+        var t2j = t1.toJSON({processors: ['testIn']});
         test.equals(t2j.name, 'Fritzy??');
         test.done();
     }

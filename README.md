@@ -59,6 +59,7 @@ As such, "required" is no longer a necessary field, depends is now an array, and
     * [validate](#def-validate)
     * [processIn](#def-processIn)
     * [processOut](#def-processOut)
+    * [processors](#def-processors)
     * [onSet](#def-onSet)
     * [derive](#def-derive)
     * [index](#def-index)
@@ -217,6 +218,7 @@ Noticed that the derived field, `name.full` was populated.
 * [validate](#def-validate)
 * [processIn](#def-processIn)
 * [processOut](#def-processOut)
+* [processors](#def-processors)
 * [onSet](#def-onSet)
 * [derive](#def-derive)
 * [index](#def-index)
@@ -305,6 +307,28 @@ new verymodel.Model({someDateField: {
 
 ----
 
+<a name='def-processors'></a>
+__processors__
+
+`processors` is an object that contains functions that takes a value and returns a value, just like `processIn` and `processOut`, but only run when you call `create` or `toJSON` with the option of processors with an array item that matches the key to this function.
+
+Example:
+
+```javascript
+var model = new verymodel.Model({name: {
+    processors: {
+        customProcessor: function (value) {
+            return value + '!'; //turn moment into string
+        }
+    }
+});
+
+model.create({someDateField: 'Fritzy'}, {processors: ['customProcessor']});
+console.log(model.name); // Fritzy!
+
+```
+
+----
 <a name='def-onSet'></a>
 __onSet__
 
@@ -392,7 +416,7 @@ __private__
 * [exportJoi](#exportJoi)
 
 <a name="create"></a>
-__create(value_object)__
+__create(value_object, options)__
 
 Returns a factory instance model.
 
@@ -402,6 +426,10 @@ Validations are not done on creation, but some values may be processed based on 
 
 Logging the model out to console will produce a confusing result.
 If you want the model's data, run `.toJSON()` and use the result.
+
+Options:
+
+* processors: Array of strings listing which custom [processors](#def-processors) to run in each fields definition for `processor`
 
 Example:
 
@@ -439,10 +467,12 @@ __toJSON(flags)__
 
 Outputs a JSON style object from the model.
 
-Boolean Flags:
+Options:
 
 * noDepth: false by default. If true, does not recursively toJSON objects like [model](#def-model)s and [collection](#def-collection)s.
 * withPrivate: false by default. If true, includes fields with [private](#def-private) set to true.
+* processors: list of processors to run.
+
 
 Example:
 
