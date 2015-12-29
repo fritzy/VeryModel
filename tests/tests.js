@@ -397,6 +397,26 @@ module.exports = {
         var t1 = Thing2.create({name: ['Nathan', 'Fritz']}, {processors: ['testIn2']});
         test.equals(t1.name, 'Nathan Fritz');
         test.done();
+    },
+    "show empty": function (test) {
+        var Fruit = new VeryModel({
+            name: {}
+        });
+        var Vegitable = new VeryModel({
+            name: {}
+        });
+        var Basket = new VeryModel({
+            fruit: {model: Fruit, showEmpty: true},
+            vegitables: {collection: Vegitable, showEmpty: true},
+            size: {}
+        });
+        var basket = Basket.create({size: 'small'});
+        var jb = basket.toJSON();
+        test.equals(typeof jb.fruit, 'object');
+        test.equals(Array.isArray(jb.fruit), false);
+        test.equals(Array.isArray(jb.vegitables), true);
+        console.log(jb);
+        test.done();
     }
 };
 
