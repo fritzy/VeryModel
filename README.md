@@ -1,3 +1,7 @@
+![the VeryModel of a modern major general](https://cldup.com/uYqBNVl8ku.png)
+
+![npm i verymodel](https://www.npmjs.com/package/verymodel)
+
 VeryModel
 =========
 
