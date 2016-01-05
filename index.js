@@ -1,6 +1,11 @@
-var definition = require('./lib/definition');
+'use strict';
 
-exports.VeryModel = require('./lib/model');
-exports.Model = exports.VeryModel;
-exports.VeryCollection = require('./lib/collection');
-exports.registerTypes = definition.registerTypes;
+const libModel = require('./lib/model');
+const libTypes = require('./lib/types');
+
+module.exports = {
+  Model: libModel.Model,
+  getModel: libModel.getModel,
+  addType: libTypes.addType,
+  addTypes: libTypes.addTypes
+};
